@@ -1122,6 +1122,10 @@ function createQParson(div)
       isAnswered: false,
       isShowFeedback: false,
       attempt: 0,
+      maxHeight: 0,
+      init(){
+        this.maxHeight = $el.querySelector('.block-container.source').offsetHeight;
+      },
       parse(el){
         this.attempt++;
         const solution = $refs.solutionPre.innerText;
@@ -1183,6 +1187,7 @@ function createQParson(div)
         x-sort:group="code-]] .. taskID .. [["
         x-sort="isShowFeedback = false"
         class="block-container source"
+        :style="`height: ${maxHeight}px`"
       >
         <div class="empty-item" x-sort:item="999"></div>
 ]]))
@@ -1196,6 +1201,7 @@ function createQParson(div)
         x-sort:group="code-]] .. taskID .. [["
         x-sort="isShowFeedback = false"
         class="block-container solution"
+        :style="`height: ${maxHeight}px`"
         x-ref="result"
     >
         <div class="empty-item" x-sort:item="999"></div>
