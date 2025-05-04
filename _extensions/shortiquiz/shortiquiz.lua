@@ -39,6 +39,15 @@ local function ShuffleInPlace(t)
   end
 end
 
+-- Для случайных ID
+function RandomStringID(length)
+  local res = ""
+  for i = 1, length do
+    res = res .. string.char(math.random(97, 122))
+  end
+  return res
+end
+
 return {
   ['qselect'] = function(args, kwargs, meta)
     -- TODO добавить выбор стиля: обычный текст или моноширный.
@@ -122,7 +131,7 @@ return {
     writeEnvironments()
     local correctAnswer = escapeHtmlDataAttribute(args[1])
     local showText = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["show"]))
-    local hintsText = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["hints"]))
+    local hintsText = pandoc.utils.stringify(kwargs["hints"])
     local size = pandoc.utils.stringify(kwargs["size"])
     local mono = pandoc.utils.stringify(kwargs["mono"])
     local tol = pandoc.utils.stringify(kwargs["tol"])
@@ -194,10 +203,22 @@ return {
       <span class="qinput__warning" x-show="wrong" x-cloak x-transition> <span :class="{ 'shake-head': isShakeHead }">x</span> </span>]]
 
     if hintsText ~= '' then
+      local tipId = RandomStringID(8)
       html = html ..
-          [[<span x-show="hints" data-hint="]] .. hintsText .. [[" class="qinput__tooltip" x-transition x-cloak>
-      <span class="pulse" x-clock> ? </span>
-      </span>]]
+          [[<span x-show="hints" x-transition x-cloak id="]] .. tipId ..
+          [[" class="qinput__tooltip" x-clock>
+            <span class="pulse">?</span>
+          </span>
+
+          <script>
+          tippy('#]] .. tipId .. [[', {
+              content: "]] .. hintsText .. [[",
+              theme: "qhint",
+              maxWidth: 250,
+              hideOnClick: false,
+          });
+          </script>
+          ]]
     end
 
 
