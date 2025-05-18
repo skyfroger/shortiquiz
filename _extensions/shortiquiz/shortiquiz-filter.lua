@@ -1123,6 +1123,47 @@ function createQParson(div)
       isShowFeedback: false,
       attempt: 0,
       maxHeight: 0,
+      feedback(){
+        // Обратная связь
+
+        // Массив блоков в области решения
+        const sortItems = Array.from($el.querySelectorAll('.solution .sort-item'));
+
+        // список элементов в области source, убираем класс error
+        const sourceSortItems = Array.from($el.querySelectorAll('.source .sort-item'));
+        sourceSortItems.forEach((sI, index)=>{
+            sI.classList.remove('error');
+        });
+
+        // перебираем блоки в области решения
+        sortItems.forEach((sI, index)=>{
+            sI.classList.remove('error');
+            if(this.isShowFeedback){
+                const itemSortIndex = Number(sI.getAttribute('x-sort:item'));
+
+                const blockLevel = Number(sI.getAttribute('data-level'));
+
+                /*
+                Чтобы узнать корректность вложенности блока, обращаемся к родительскому блоку.
+                Смотрим на атрибут data-level. Для корректно вложенных блоков разность уровней
+                должна быть равна единице.
+                */
+                let parent = sI.parentElement;
+                let guardCounter = 10; // счётчик-защита от зацикливания
+                while(!parent.getAttribute('data-level') && guardCounter > 0){
+                    parent = parent.parentElement;
+                    guardCounter--;
+                }
+                const parentBlockLevel = Number(parent.getAttribute('data-level'));
+
+                // ошибка, если не соблюдается порядок расположения или уровень вложенности блока
+                if((itemSortIndex - 1) !== index || (blockLevel - parentBlockLevel) !== 1)
+                    sI.classList.add('error');
+                else
+                    sI.classList.remove('error');
+            }
+        });
+      },
       init(){
         this.maxHeight = $el.querySelector('.block-container.source').offsetHeight;
       },
@@ -1178,14 +1219,15 @@ function createQParson(div)
             </div>
         </div>
 
-        <button x-show="!isAnswered" x-on:click="parse($refs.result)">Проверить</button>
+        <button x-show="!isAnswered" x-on:click="parse($refs.result); feedback();">Проверить</button>
     </div>
     <div class="block__container"> <!-- grid start -->
       <div
+      x-sort="(item, position) => { isShowFeedback = false }"
         x-sort.ghost
         x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
         x-sort:group="code-]] .. taskID .. [["
-        x-sort="isShowFeedback = false"
+
         class="block-container source"
         :style="`height: ${maxHeight}px`"
       >
@@ -1196,19 +1238,21 @@ function createQParson(div)
     table.insert(elementContent, pandoc.RawBlock("html", [[
     </div>
     <div
+    x-sort="(item, position) => { isShowFeedback = false }"
         x-sort.ghost
         x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
         x-sort:group="code-]] .. taskID .. [["
-        x-sort="isShowFeedback = false"
+
         class="block-container solution"
         :style="`height: ${maxHeight}px`"
         x-ref="result"
+        data-level="-1"
     >
         <div class="empty-item" x-sort:item="999"></div>
     </div>
     </div> <!-- flex end -->
     <div class="feedback__container" x-show="isShowFeedback === true" x-cloak x-transition>
-        <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">В коде есть ошибки</div>
+        <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">В коде есть ошибки. Блоки решения расположены не в том порядке.</div>
     </div>
 </div>
 ]]))

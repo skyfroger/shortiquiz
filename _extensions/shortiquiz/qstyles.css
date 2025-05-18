@@ -577,11 +577,13 @@
 }
 
 .qparson__ready .sort-item {
+    position: relative;
     cursor: grab;
     overflow: auto;
     scrollbar-width: thin;
     background-color: #f8f9fa;
-    padding: 0.3em 0 0.3em 0.3em;
+    border-color: #f8f9fa;
+    padding: 0.3em 0.3em 0.3em 0.3em;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
@@ -593,11 +595,12 @@
     opacity: 0.5 !important;
 }
 .qparson__ready .code-block {
-    border-left: 2px solid green !important;
+    border-left: 3px solid #008000 !important;
     min-height: 2em;
     margin-left: 2em;
     background-color: #e2f3ef;
 }
+
 .qparson__ready .empty-item {
     display: none;
 }
@@ -659,6 +662,31 @@
     justify-content: center;
     align-items: center;
     box-shadow: var(--hover-shadow);
+}
+
+.qparson__ready .sort-item.error::after {
+    content: "x";
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 1.4rem;
+    padding: 0 0.3em;
+    color: var(--bg-color);
+    font-family: "Courier New", Courier, monospace;
+    font-weight: bold;
+    background-color: var(--wrong-color);
+    border-radius: 0 0 0 0.4em;
+    opacity: 0;
+    animation: appear 0.4s ease-out forwards;
+}
+
+@keyframes appear {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Ширина элементов для мобильного телефона */
