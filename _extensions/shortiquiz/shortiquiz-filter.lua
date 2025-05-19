@@ -730,7 +730,8 @@ function createQgroup(div)
     for i, q in ipairs(div.content) do
         if q.classes ~= nil and (q.classes:includes("qmulti__formated") or
                 q.classes:includes("qcheck__formated") or
-                q.classes:includes("qinput__formated")) then
+                q.classes:includes("qinput__formated")) or
+            q.classes:includes("qparson__ready") then
             table.insert(qList, pandoc.RawBlock("html", [[
             <div
                 x-show="currentIndex === ]] .. (i - 1) .. [["
@@ -1024,6 +1025,7 @@ function createQParson(div)
     local taskID = RandomStringID(7) -- уникальный идентификатор задания
 
     local elementContent = {}        -- разметка всего вопроса
+    local taskDescription = {}       -- разметка условия задачи
     local solutionCode = nil         -- варианты ответа
     local distractors = nil          -- элемент CodeBlock содержащий дистракторы для усложнения задания
 
@@ -1039,6 +1041,12 @@ function createQParson(div)
         separator = "(.-)(" .. div.attributes["sep"] .. "?)\n"
     end
 
+    local gateName = "" -- имя гейта
+
+    if div.attributes["gate"] ~= nil then
+        gateName = div.attributes["gate"]
+    end
+
     for _, el in ipairs(div.content) do
         if el.t == "CodeBlock" then
             if solutionCode == nil then
@@ -1046,6 +1054,8 @@ function createQParson(div)
             else
                 distractors = el
             end
+        else
+            table.insert(taskDescription, el) -- все остальные элементы добавляем в условие задачи
         end
     end
 
@@ -1164,9 +1174,7 @@ function createQParson(div)
             }
         });
       },
-      init(){
-        this.maxHeight = $el.querySelector('.block-container.source').offsetHeight;
-      },
+
       parse(el){
         this.attempt++;
         const solution = $refs.solutionPre.innerText;
@@ -1205,22 +1213,50 @@ function createQParson(div)
         this.isAnswered = fullCodeSolution === solution && !levelCorrelationList.includes(false);
       }
     }"
-    > <!-- Начало компонента AlpineJs -->
+    data-gate=']] .. gateName .. [['
+    x-init="const targetNode = $el;
+
+    // если меняется высота всего компонента, пересчитываем высоту блока
+    // который хранит строки кода
+    // это нужно, если элемент используется в qgroup или qgate
+    const observer = new ResizeObserver(entries => {
+        const codeBlocks = Array.from($el.querySelectorAll('.sort-item'));
+        maxHeight = codeBlocks.reduce((acc, node)=>{
+            return acc + node.offsetHeight;
+        }, 15);
+    });
+    observer.observe(targetNode);
+
+    $watch('isAnswered', value => {
+        console.log(isAnswered);
+        if (value) {
+            isCurrentAnswerCorrect = true;
+            $dispatch('answer-notification', {
+                isCorrect: true,
+                type: 'qparson',
+                gate: ']] .. gateName .. [[',
+                attempt: attempt
+            });
+        }
+    });
+    "> <!-- Начало компонента AlpineJs -->
+
+
+    <div x-show="isAnswered" x-transition="" class="qmulti__result__badge qmulti__result__correct">
+        <span>✔</span>
+    </div>
 
     <!-- скрытый элемент pre с правильным кодом решениям -->
-    <pre style="display: none;" x-ref="solutionPre">]] .. solutionText .. [[</pre>
+    <pre style="display: none;" x-ref="solutionPre">]] .. solutionText .. [[</pre>]]))
 
-    <div class="header__buttons">
-        <div x-show="isAnswered" x-cloak x-transition>
-            <button class="copy_code" x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)">📋</button>
-            <div
-                class="qparson__result__badge">
-                <span>✔</span>
-            </div>
-        </div>
+    -- рендеринг условия задачи, если оно есть
+    if #taskDescription ~= 0 then
+        table.insert(elementContent, pandoc.Div(taskDescription, { class = "task__desc" }))
+    end
 
-        <button x-show="!isAnswered" x-on:click="parse($refs.result); feedback();">Проверить</button>
-    </div>
+    table.insert(elementContent, pandoc.RawBlock("html",
+        [[
+
     <div class="block__container"> <!-- grid start -->
       <div
       x-sort="(item, position) => { isShowFeedback = false }"
@@ -1251,8 +1287,19 @@ function createQParson(div)
         <div class="empty-item" x-sort:item="999"></div>
     </div>
     </div> <!-- flex end -->
-    <div class="feedback__container" x-show="isShowFeedback === true" x-cloak x-transition>
-        <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">В коде есть ошибки. Блоки решения расположены не в том порядке.</div>
+
+    <div class="header__buttons">
+        <div x-show="isAnswered" x-cloak x-transition>
+            <button class="copy_code" x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)">📋</button>
+        </div>
+
+        <button x-show="!isAnswered" x-on:click="parse($refs.result); feedback();">Проверить</button>
+
+        <div x-show="isShowFeedback === true" x-cloak x-transition>
+            <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">
+            В коде есть ошибки. Блоки решения расположены не в том порядке.
+            </div>
+        </div>
     </div>
 </div>
 ]]))
@@ -1274,8 +1321,8 @@ function createQgate(div)
     <div x-data="{
         gateCount: null,
         init(){
-            this.gateCount = document.querySelectorAll('[data-gate=]] .. name .. [[]').length
-    },
+            this.gateCount = document.querySelectorAll('[data-gate=]] .. name .. [[]').length;
+        },
         get isVisible(){
             return this.gateCount !== null && this.gateCount <= 0;
         }

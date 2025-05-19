@@ -17,7 +17,7 @@
 }
 
 .qinput__container {
-    height: 1.5em;
+    height: 1.4em;
     display: inline-flex;
     align-items: center;
     background-color: var(--primary-color);
@@ -48,7 +48,7 @@
 }
 
 .qinput__warning {
-    height: 1.5em;
+    height: 1.4em;
     background-color: var(--wrong-color);
     color: white;
     padding: 0 0.25rem;
@@ -95,11 +95,12 @@
 }
 
 .qselect__select option {
-    font-size: 1.05rem;
+    font-weight: normal;
+    font-size: 1rem;
 }
 
 .qinput__tooltip {
-    height: 1.5em;
+    height: 1.4em;
     cursor: pointer;
     background-color: var(--success-color);
     color: white;
@@ -556,8 +557,18 @@
 }
 
 /* Parson */
+
 .qparson__ready {
     margin: 1em 0;
+    position: relative;
+}
+
+.qparson__ready .task__desc {
+    border-radius: 0.5em;
+    background: rgb(237, 250, 239);
+    background: linear-gradient(0deg, #0f80f209 0%, #0f80f227 100%);
+    padding: 0.5em;
+    margin-bottom: 0.5em;
 }
 
 .qparson__ready .block-container {
@@ -634,9 +645,9 @@
 
 .qparson__ready .header__buttons {
     display: flex;
-    margin-bottom: 0.5em;
-    justify-content: flex-end;
-    align-items: center;
+    margin-top: 0.5em;
+    justify-content: flex-start;
+    align-items: baseline;
     gap: 0.2em;
 }
 
