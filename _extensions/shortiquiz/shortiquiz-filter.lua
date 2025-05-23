@@ -1061,6 +1061,12 @@ function createQParson(div)
 
     if solutionCode == nil then return pandoc.Div('') end -- внутри qparson нет кода решения; завершаем работу функции
 
+    -- язык подстветки кода
+    local languageClass = "python"
+    if #solutionCode.classes > 0 then
+        languageClass = solutionCode.classes[1]
+    end
+
     lines = {}
     for s in (solutionCode.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
         table.insert(lines, s)
@@ -1075,7 +1081,7 @@ function createQParson(div)
 
     -- TODO УДАЛЯТЬ ПУСТЫЕ СТРОКИ
 
-    -- определяем, какие блоки должны сами быть контейнерами для, а какие просто
+    -- определяем, какие блоки должны сами быть контейнерами для других блоков, а какие просто
     -- блоками для перетаскивания
     local isLineBlock = {}
     for i = 1, (#lines - 1) do
@@ -1088,35 +1094,39 @@ function createQParson(div)
             table.insert(isLineBlock, 0)
         end
     end
-    table.insert(isLineBlock, 0) -- последняя строка кода всегда не будет блоком
+    table.insert(isLineBlock, 0)                         -- последняя строка кода всегда не будет блоком
 
-    local itemsList = {}         -- список элементов для перетаскивания
+    local itemsList = {}                                 -- список элементов для перетаскивания
     for i = 1, #lines do
-        local itemRawHTML = ""
         local trimedLine = trim_initial_spaces(lines[i]) --lines[i]:gsub("^%s+", "")
         local level = #(lines[i]:match("^(%s*)")) // spacesPerLevel
         if isLineBlock[i] == 0 then
-            itemRawHTML = [[
-<div class="sort-item" data-level="]] ..
-                level ..
-                [[" x-sort:item="]] ..
-                i .. [["><code data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]] ..
-                trimedLine .. [[</code></div>]]
+            local itemDivContent = {
+                pandoc.RawBlock("html", [[<span data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]]),
+                pandoc.Code(trimedLine, { class = languageClass }),
+                pandoc.RawBlock("html", [[</span>]])
+            }
+            table.insert(itemsList,
+                pandoc.Div(itemDivContent,
+                    { class = "sort-item", ['data-level'] = tostring(level), ['x-sort:item'] = tostring(i) }))
         else
-            itemRawHTML = [[
-<div class="sort-item" data-level="]] .. level .. [[" x-sort:item="]] .. i .. [[">
-    <code data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]] .. trimedLine .. [[</code>
-    <div class="code-block"
-        x-sort.ghost
-        x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
-        x-sort:group="code-]] .. taskID .. [["
-        x-sort="isShowFeedback = false"
-        >
-        <div class="empty-item" x-sort:item="999"></div>
-    </div>
-</div>]]
+            local itemDivContent = {
+                pandoc.RawBlock("html", [[<span data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]]),
+                pandoc.Code(trimedLine, { class = languageClass }),
+                pandoc.RawBlock("html", [[</span>
+                    <div class="code-block"
+                        x-sort.ghost
+                        x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
+                        x-sort:group="code-]] .. taskID .. [["
+                        x-sort="isShowFeedback = false"
+                        >
+                        <div class="empty-item" x-sort:item="999"></div>
+                    </div>]])
+            }
+            table.insert(itemsList,
+                pandoc.Div(itemDivContent,
+                    { class = "sort-item", ['data-level'] = tostring(level), ['x-sort:item'] = tostring(i) }))
         end
-        table.insert(itemsList, itemRawHTML)
     end
 
     ShuffleInPlace(itemsList) -- перемешиваем строки с кодом программы
@@ -1179,7 +1189,7 @@ function createQParson(div)
         this.attempt++;
         const solution = $refs.solutionPre.innerText;
 
-        const lines = Array.from(el.querySelectorAll('code')); // получаем список строк кода в теге code
+        const lines = Array.from(el.querySelectorAll('span[data-code-line]')); // получаем список строк кода в теге span
         const itemDivs = lines.map((line)=>{return line.parentElement}); // список родительских элементов тегов code
 
         const levelCorrelationList = []; // массив булевых значений уровней вложенности
@@ -1270,7 +1280,11 @@ function createQParson(div)
         <div class="empty-item" x-sort:item="999"></div>
 ]]))
 
-    table.insert(elementContent, pandoc.RawBlock("html", table.concat(itemsList, "")))
+    --- добавляем перетаскиваемые элементы
+    for _, el in ipairs(itemsList) do
+        table.insert(elementContent, el)
+    end
+
     table.insert(elementContent, pandoc.RawBlock("html", [[
     </div>
     <div
