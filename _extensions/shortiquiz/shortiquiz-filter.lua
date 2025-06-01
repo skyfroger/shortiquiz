@@ -1072,6 +1072,8 @@ function createQParson(div)
         table.insert(lines, s)
     end
 
+    local correctLinesString = escapeHtmlDataAttribute(table.concat(lines, [[`, `]]))
+
     -- если есть дистракторы, добавляем их к блокам решения
     if distractors ~= nil then
         for s in (distractors.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
@@ -1143,9 +1145,12 @@ function createQParson(div)
       isShowFeedback: false,
       attempt: 0,
       maxHeight: 0,
+      linesArray: [`]] .. correctLinesString .. [[`],
+      errorMessage: 'В коде есть ошибка.',
       feedback(){
+        this.attempt++; // счётчик попыток
+        this.isShowFeedback = true; // показать фидбек по вопросу
         // Обратная связь
-
         // Массив блоков в области решения
         const sortItems = Array.from($el.querySelectorAll('.solution .sort-item'));
 
@@ -1155,7 +1160,14 @@ function createQParson(div)
             sI.classList.remove('error');
         });
 
+        const isSolutionLengthCorrect = this.linesArray.length === sortItems.length;
+        if (!isSolutionLengthCorrect){
+            this.errorMessage = 'В решении задачи не хватает блоков.';
+        }
+
         // перебираем блоки в области решения
+        let correctFlag = true;
+
         sortItems.forEach((sI, index)=>{
             sI.classList.remove('error');
             if(this.isShowFeedback){
@@ -1176,52 +1188,22 @@ function createQParson(div)
                 }
                 const parentBlockLevel = Number(parent.getAttribute('data-level'));
 
+                const code = sI.querySelector('span[data-code-line]').getAttribute('data-code-line');
+
                 // ошибка, если не соблюдается порядок расположения или уровень вложенности блока
-                if((itemSortIndex - 1) !== index || (blockLevel - parentBlockLevel) !== 1)
+                if((blockLevel - parentBlockLevel) !== 1 ||
+                    code !== this.linesArray[index]){
                     sI.classList.add('error');
+                    this.errorMessage = 'Неправильный порядок расположения блоков.';
+                    correctFlag = false;
+                }
                 else
                     sI.classList.remove('error');
             }
         });
+
+        this.isAnswered = correctFlag && isSolutionLengthCorrect;
       },
-
-      parse(el){
-        this.attempt++;
-        const solution = $refs.solutionPre.innerText;
-
-        const lines = Array.from(el.querySelectorAll('span[data-code-line]')); // получаем список строк кода в теге span
-        const itemDivs = lines.map((line)=>{return line.parentElement}); // список родительских элементов тегов code
-
-        const levelCorrelationList = []; // массив булевых значений уровней вложенности
-
-        /*
-        Выясняем, находится ли строка кода в блоке с правильным уровнем отступа.
-        */
-        itemDivs.forEach((elmnt)=>{
-          let levelsCounter = 0;
-          let currentParrent = elmnt.parentElement;
-          // перебираем родительские элементы пока они не существуют или не встретим контейнер с решением
-          while(currentParrent !== null && !currentParrent.className.includes('block-container')){
-            // нашли среди родителей блок с классом sort-item
-            // значит нашли ещё один уровень вложенности
-            if (currentParrent.className.includes('sort-item')){
-              levelsCounter++;
-            }
-            currentParrent = currentParrent.parentElement;
-          }
-          // сравниваем
-          levelCorrelationList.push(Number(elmnt.getAttribute('data-level')) === levelsCounter);
-        });
-
-        // формируем список строк кода
-        const code = lines.map((line)=>{
-          return line.getAttribute('data-code-line');
-        });
-        const fullCodeSolution = code.join('\n');
-
-        this.isShowFeedback = true; // показать фидбек по вопросу
-        this.isAnswered = fullCodeSolution === solution && !levelCorrelationList.includes(false);
-      }
     }"
     data-gate=']] .. gateName .. [['
     x-init="const targetNode = $el;
@@ -1307,11 +1289,11 @@ function createQParson(div)
             <button class="copy_code" x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)">📋</button>
         </div>
 
-        <button x-show="!isAnswered" x-on:click="parse($refs.result); feedback();">Проверить</button>
+        <button x-show="!isAnswered" x-on:click="feedback();">Проверить</button>
 
         <div x-show="isShowFeedback === true" x-cloak x-transition>
             <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">
-            В коде есть ошибки. Блоки решения расположены не в том порядке.
+                <span x-text="errorMessage"></span>
             </div>
         </div>
     </div>

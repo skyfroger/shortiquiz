@@ -226,6 +226,7 @@
 
 .qmulti__result__badge {
     position: absolute;
+    z-index: 100;
     top: -15px;
     left: -15px;
     width: 40px;
