@@ -684,7 +684,7 @@
     height: 1.4rem;
     padding: 0 0.3em;
     color: var(--bg-color);
-    font-family: "Courier New", Courier, monospace;
+    font-family: "Consolas", Courier, monospace;
     font-weight: bold;
     background-color: var(--wrong-color);
     border-radius: 0 0 0 0.4em;

@@ -1287,6 +1287,7 @@ function createQParson(div)
     <div class="header__buttons">
         <div x-show="isAnswered" x-cloak x-transition>
             <button class="copy_code" x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)">📋</button>
+            <span x-text="`Использовано попыток: ${attempt}`"></span>
         </div>
 
         <button x-show="!isAnswered" x-on:click="feedback();">Проверить</button>
