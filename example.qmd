@@ -4,6 +4,9 @@ filters:
   - shortiquiz
 ---
 
+
+## qparson
+
 :::{.qparson}
 
 ```python
@@ -15,6 +18,8 @@ print("Произведение:", prod)
 ```
 
 :::
+
+## qflip
 
 :::{.qflip}
 
