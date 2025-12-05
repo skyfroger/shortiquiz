@@ -1342,6 +1342,66 @@ function createQgate(div)
     return pandoc.Div(elementContent, { class = "qgate__ready" })
 end
 
+function createQflip(div)
+    writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+
+    local question = {}              -- разметка всего вопроса
+    local questionContent = {}       -- содержимое вопроса
+    local answerContent = {}         -- содержимое ответа
+
+    local gateName = ""
+
+    -- имя гейта
+    if div.attributes["gate"] ~= nil then
+        gateName = div.attributes["gate"]
+    end
+
+    local isQuestion = true
+
+    -- quarto.log.output(div)
+    for _, el in ipairs(div.content) do
+        if el.t == "HorizontalRule" then
+            isQuestion = false
+        elseif isQuestion then
+            table.insert(questionContent, el)
+        else
+            table.insert(answerContent, el)
+        end
+    end
+
+    if #questionContent == 0 or #answerContent == 0 then
+        return pandoc
+            .Div('')
+    end
+
+    table.insert(question, pandoc.RawBlock("html", [[<div class="qscene" x-data="{ flipped: false }">
+      <div
+        class="qcard"
+        @click="flipped = !flipped"
+        :class="{ 'is-flipped': flipped }"
+      >
+        <div class="qcard__face qcard__face--front">
+          <div class="qcard__content">]]))
+
+    table.insert(question, pandoc.Div(questionContent))
+
+    table.insert(question, pandoc.RawBlock("html", [[</div>
+            </div>
+
+            <div class="qcard__face qcard__face--back">
+            <div class="qcard__content">
+    ]]))
+
+    table.insert(question, pandoc.Div(answerContent))
+
+    table.insert(question, pandoc.RawBlock("html", [[</div>
+        </div>
+      </div>
+    </div>]]))
+
+    return pandoc.Div(question, { class = "qflip__ready" })
+end
+
 if quarto.doc.isFormat("html:js") then
     Div = function(div)
         -- # Вопрос с одним правильным ответом # --
@@ -1374,6 +1434,10 @@ if quarto.doc.isFormat("html:js") then
 
         if div.classes:includes("qparson") then
             return createQParson(div)
+        end
+
+        if div.classes:includes("qflip") then
+            return createQflip(div)
         end
 
         -- # Ворота # --
