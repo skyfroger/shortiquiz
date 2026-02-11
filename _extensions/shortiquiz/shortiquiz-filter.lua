@@ -1331,6 +1331,7 @@ function createQgate(div)
             gateCount--;
         }
     ">
+        <hr class="hr-text" :data-content="!isVisible ? `🔒 (${gateCount})` : '✅'">
     <div x-show="isVisible" x-cloak x-transition:enter.duration.2000ms x-transition.delay.500ms>
     ]]))
     table.insert(elementContent, div)
