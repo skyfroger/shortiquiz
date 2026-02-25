@@ -908,25 +908,31 @@
     position: relative;
     display: inline-block; /* ключевое свойство */
     padding: 0;
-    cursor: crosshair;
+    margin-bottom: 0.7em;
+    box-shadow: var(--hover-shadow);
 }
 
-.qspot__container img {
-    display: block;
-    margin: 0 auto;
+.qspot__instruction {
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    font-size: 0.85em;
+    color: gray;
 }
 
 .qspot__pin {
     position: absolute;
-    width: 14px;
-    height: 14px;
-    border: 1px solid green;
-    border-radius: 50%;
-    background-color: aqua;
-    top: 15%;
-    left: 15%;
-    transition: all 0.4s ease-out;
+    transform: translate(-3px, -42px);
+    top: 5%;
+    left: 90%;
+    transition: all 0.3s ease;
 }
+
+.qspot__pin img {
+    height: 52px;
+    width: 52px;
+}
+
 .qspot__area {
     position: absolute;
     opacity: 0;
