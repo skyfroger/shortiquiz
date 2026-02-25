@@ -731,7 +731,8 @@ function createQgroup(div)
         if q.classes ~= nil and (q.classes:includes("qmulti__formated") or
                 q.classes:includes("qcheck__formated") or
                 q.classes:includes("qinput__formated")) or
-            q.classes:includes("qparson__ready") then
+            q.classes:includes("qparson__ready") or
+            q.classes:includes("qspot__formated") then
             table.insert(qList, pandoc.RawBlock("html", [[
             <div
                 x-show="currentIndex === ]] .. (i - 1) .. [["
@@ -1403,6 +1404,11 @@ function createQflip(div)
     return pandoc.Div(question, { class = "qflip__ready" })
 end
 
+function css_style(str)
+    local top, left, width, height = str:match("(%-?%d+%.?%d*) (%-?%d+%.?%d*) (%-?%d+%.?%d*) (%-?%d+%.?%d*)")
+    return string.format("style=\"top: %s%%; left: %s%%; width: %s%%; height: %s%%\"", top, left, width, height)
+end
+
 function createQspot(div)
     writeEnvironments() -- окружение
     local qId = RandomStringID(10) -- уникальный ID для элементов этого вопроса
@@ -1412,8 +1418,11 @@ function createQspot(div)
     local mainImage = nil                 -- изображение
     local hint = nil           -- подсказка
 
-        
-    
+    local area = ""
+    if div.attributes["area"] ~= nil then
+        area = pandoc.utils.stringify(div.attributes["area"])
+    end
+
     local gateName = ""
     -- имя гейта
     if div.attributes["gate"] ~= nil then
@@ -1434,10 +1443,8 @@ function createQspot(div)
         end
     end
 
-    quarto.log.output(mainImage.t)
-
     -- нет нужных элементов в разметке вопроса
-    if #questionsContent == 0 or mainImage == nil then
+    if #questionsContent == 0 or mainImage == nil or area == '' then
         return pandoc
             .Div('')
     end
@@ -1449,6 +1456,13 @@ function createQspot(div)
             attempt: 0,
             isAnswerCorrect: false,
             isHintVisible: false,
+            isShakeHead: false,
+            shake(){
+                this.isShakeHead = true;
+                setTimeout(() => {
+                    this.isShakeHead = false;
+                }, 600);
+            },
             isCorrectHit: false,
             hitTest(event){
                 const container = document.querySelector('.qspot__container[data-qid=]]..qId..[[');
@@ -1482,6 +1496,7 @@ function createQspot(div)
                 clickX <= areaRect.right &&
                 clickY >= areaRect.top &&
                 clickY <= areaRect.bottom;
+
             }
         }"
         data-gate=']] .. gateName .. [['
@@ -1527,12 +1542,12 @@ function createQspot(div)
     <div class="qspot__container__wraper">
     
     <div data-qid="]]..qId..[[" class="qspot__container" x-on:click="hitTest($event)">
-        <div data-qid="]]..qId..[[" class="qspot__area" :class="isAnswerCorrect && 'correct'"></div>]]))
+        <div data-qid="]]..qId..[[" class="qspot__area" :class="isAnswerCorrect && 'correct'" ]]..css_style(area)..[[></div>]]))
 
     table.insert(question, mainImage)
 
     table.insert(question, pandoc.RawBlock("html", [[
-        <div data-qid="]]..qId..[[" class="qspot__pin" x-show="!isAnswerCorrect" x-transition="">
+        <div data-qid="]]..qId..[[" class="qspot__pin" x-show="!isAnswerCorrect" :class="{ 'wrong': isShakeHead }" x-transition="">
         <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAEqWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS41LjAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczpleGlmPSJodHRwOi8vbnMuYWRvYmUuY29tL2V4aWYvMS4wLyIKICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgdGlmZjpJbWFnZUxlbmd0aD0iNjQiCiAgIHRpZmY6SW1hZ2VXaWR0aD0iNjQiCiAgIHRpZmY6UmVzb2x1dGlvblVuaXQ9IjIiCiAgIHRpZmY6WFJlc29sdXRpb249IjcyLzEiCiAgIHRpZmY6WVJlc29sdXRpb249IjcyLzEiCiAgIGV4aWY6UGl4ZWxYRGltZW5zaW9uPSI2NCIKICAgZXhpZjpQaXhlbFlEaW1lbnNpb249IjY0IgogICBleGlmOkNvbG9yU3BhY2U9IjEiCiAgIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiCiAgIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjYtMDIt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'/>
         </div>
     </div>
@@ -1544,7 +1559,7 @@ function createQspot(div)
                 class="button__evaluate"
                 x-show="!isAnswerCorrect"
                 x-transition
-                x-on:click="attempt++; isAnswerCorrect = isCorrectHit;"
+                x-on:click="attempt++; isAnswerCorrect = isCorrectHit; if (!isCorrectHit) shake();"
             >
                 ✓ Проверить
             </button>

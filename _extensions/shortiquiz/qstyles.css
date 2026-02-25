@@ -908,8 +908,8 @@
     position: relative;
     display: inline-block; /* ключевое свойство */
     padding: 0;
-    margin-bottom: 0.7em;
-    box-shadow: var(--hover-shadow);
+    margin: 0.2em 0;
+    overflow: visible; /* чтобы тень не обрезалась */
 }
 
 .qspot__instruction {
@@ -928,6 +928,46 @@
     transition: all 0.3s ease;
 }
 
+@keyframes shake {
+    0% {
+        transform: translate(-3px, -42px) translateX(0) rotate(0deg);
+    }
+    10% {
+        transform: translate(-3px, -42px) translateX(-6px) rotate(-3deg);
+    }
+    20% {
+        transform: translate(-3px, -42px) translateX(6px) rotate(3deg);
+    }
+    30% {
+        transform: translate(-3px, -42px) translateX(-6px) rotate(-3deg);
+    }
+    40% {
+        transform: translate(-3px, -42px) translateX(6px) rotate(3deg);
+    }
+    50% {
+        transform: translate(-3px, -42px) translateX(-4px) rotate(-2deg);
+    }
+    60% {
+        transform: translate(-3px, -42px) translateX(4px) rotate(2deg);
+    }
+    70% {
+        transform: translate(-3px, -42px) translateX(-2px) rotate(-1deg);
+    }
+    80% {
+        transform: translate(-3px, -42px) translateX(2px) rotate(1deg);
+    }
+    90% {
+        transform: translate(-3px, -42px) translateX(-1px) rotate(-0.5deg);
+    }
+    100% {
+        transform: translate(-3px, -42px) translateX(0) rotate(0deg);
+    }
+}
+
+.qspot__pin.wrong {
+    animation: shake 0.5s ease-in-out;
+}
+
 .qspot__pin img {
     height: 52px;
     width: 52px;
@@ -939,10 +979,6 @@
     border: 0.3em solid var(--success-color);
     background-color: #0a8f6e30;
     border-radius: 0.6em;
-    width: 37%;
-    height: 35%;
-    left: 12%;
-    top: 50%;
     transition: opacity 0.4s ease-out;
 }
 
