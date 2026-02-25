@@ -895,3 +895,51 @@
     hr[data-content*="🔒"] {
     display: none;
 }
+
+/* qSpot */
+
+.qspot__container__wraper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qspot__container {
+    position: relative;
+    display: inline-block; /* ключевое свойство */
+    padding: 0;
+    cursor: crosshair;
+}
+
+.qspot__container img {
+    display: block;
+    margin: 0 auto;
+}
+
+.qspot__pin {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 1px solid green;
+    border-radius: 50%;
+    background-color: aqua;
+    top: 15%;
+    left: 15%;
+    transition: all 0.4s ease-out;
+}
+.qspot__area {
+    position: absolute;
+    opacity: 0;
+    border: 0.3em solid var(--success-color);
+    background-color: #0a8f6e30;
+    border-radius: 0.6em;
+    width: 37%;
+    height: 35%;
+    left: 12%;
+    top: 50%;
+    transition: opacity 0.4s ease-out;
+}
+
+.qspot__area.correct {
+    opacity: 1;
+}

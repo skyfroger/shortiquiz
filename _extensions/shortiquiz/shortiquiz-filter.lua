@@ -1403,6 +1403,152 @@ function createQflip(div)
     return pandoc.Div(question, { class = "qflip__ready" })
 end
 
+function createQspot(div)
+    writeEnvironments() -- окружение
+    local qId = RandomStringID(10) -- уникальный ID для элементов этого вопроса
+    local question = {}        -- разметка всего вопроса
+
+    local questionsContent = {}       -- список вопросов
+    local mainImage = nil                 -- изображение
+    local hint = nil           -- подсказка
+
+        
+    
+    local gateName = ""
+    -- имя гейта
+    if div.attributes["gate"] ~= nil then
+        gateName = div.attributes["gate"]
+    end
+
+    
+    for _, el in ipairs(div.content) do
+        
+        if el.t == "OrderedList" or el.t == "BulletList" then
+            table.insert(questionsContent, el)
+        elseif el.t == "Figure" or el.t == "Para" then
+            mainImage = el.content[1]
+        elseif el.t == "BlockQuote" then
+            hint = el.content
+        end
+    end
+
+    quarto.log.output(mainImage)
+
+    -- нет нужных элементов в разметке вопроса
+    if #questionsContent == 0 or mainImage == nil then
+        return pandoc
+            .Div('')
+    end
+
+
+    table.insert(question, pandoc.RawBlock("html", [[
+    <div class="qmulti" :class="isAnswerCorrect && attempt === 1 && 'qmulti_first_try'"
+        x-data="{
+            attempt: 0,
+            isAnswerCorrect: false,
+            isHintVisible: false,
+            isCorrectHit: false,
+            hitTest(event){
+                const container = document.querySelector('.qspot__container[data-qid=]]..qId..[[');
+                const pin = document.querySelector('.qspot__pin[data-qid=]]..qId..[[');
+                const area = document.querySelector('.qspot__area[data-qid=]]..qId..[[');
+                event.stopPropagation();
+                // Координаты клика в окне браузера
+                const clickX = event.clientX;
+                const clickY = event.clientY;
+
+                // Прямоугольник контейнера (для расчёта положения пина)
+                const containerRect = container.getBoundingClientRect();
+
+                // Координаты клика относительно контейнера
+                const relativeX = clickX - containerRect.left;
+                const relativeY = clickY - containerRect.top;
+
+                const percentX = (relativeX / containerRect.width) * 100;
+                const percentY = (relativeY / containerRect.height) * 100;
+
+                // Перемещаем пин (работает благодаря position: absolute у пина)
+                pin.style.left = percentX + '%';
+                pin.style.top = percentY + '%';
+
+                // Прямоугольник области (в координатах окна)
+                const areaRect = area.getBoundingClientRect();
+
+                // Проверка попадания
+                this.isCorrectHit =
+                clickX >= areaRect.left &&
+                clickX <= areaRect.right &&
+                clickY >= areaRect.top &&
+                clickY <= areaRect.bottom;
+            }
+        }"
+        data-gate=']] .. gateName .. [['
+        x-init="$watch('isAnswerCorrect', value => {
+            if (value) {
+                isCurrentAnswerCorrect = true;
+                $dispatch('answer-notification', {
+                    isCorrect: true,
+                    type: 'qspot',
+                    gate: ']] .. gateName .. [[',
+                    attempt: attempt
+                });
+            }
+        })">
+    <div x-show="isAnswerCorrect" x-transition="" class="qmulti__result__badge qmulti__result__correct">
+        <span>✔</span>
+    </div>]]))
+
+    -- текст вопроса и разделительная черта
+    table.insert(question, pandoc.Div(questionsContent, { class = "qmulti__question" }))
+    table.insert(question, pandoc.RawBlock("html", [[<hr class="hr-text" data-content="?">]]))
+
+    -- разметка с текстом подсказки, если она есть
+    if hint ~= nil then
+        table.insert(question, pandoc.RawBlock("html", [[<div x-show="isHintVisible" x-transition>]]))
+        table.insert(question, pandoc.Div(hint))
+        table.insert(question, pandoc.RawBlock("html", [[</div>]]))
+    end
+
+    if hint ~= nil then
+        buttonsHtml =
+        [[<button class="qmulti__hint_button"
+        type="button"
+        x-show="!isHintVisible && attempt >= 1 && !isAnswerCorrect" x-transition
+        x-on:click="isHintVisible=!isHintVisible">
+        ?
+        </button>]]
+        table.insert(question, pandoc.RawBlock("html", buttonsHtml))
+    end
+
+    table.insert(question, pandoc.RawBlock("html", [[
+    <div class="qspot__container__wraper">
+    <div data-qid="]]..qId..[[" class="qspot__container" x-on:click="hitTest($event)">
+        <div data-qid="]]..qId..[[" class="qspot__area" :class="isAnswerCorrect && 'correct'"></div>]]))
+
+    table.insert(question, mainImage)
+
+    table.insert(question, pandoc.RawBlock("html", [[
+        <div data-qid="]]..qId..[[" class="qspot__pin" x-show="!isAnswerCorrect" x-transition=""></div>
+    </div>
+    </div>]]))
+
+    table.insert(question, pandoc.RawBlock("html", [[
+    <div>
+            <button
+                class="button__evaluate"
+                x-show="!isAnswerCorrect"
+                x-transition
+                x-on:click="attempt++; isAnswerCorrect = isCorrectHit;"
+            >
+                ✓ Проверить
+            </button>
+    </div>
+    </div>
+            ]]))
+
+    return pandoc.Div(question, { class = "qspot__formated" })
+end
+
 if quarto.doc.isFormat("html:js") then
     Div = function(div)
         -- # Вопрос с одним правильным ответом # --
@@ -1441,7 +1587,11 @@ if quarto.doc.isFormat("html:js") then
             return createQflip(div)
         end
 
-        -- # Ворота # --
+        if div.classes:includes("qspot") then
+            return createQspot(div)
+        end
+
+        -- # Ворота - обработка в последнюю очередь # --
         if div.classes:includes("qgate") then -- если div содержит нужный стиль - обрабатываем разметку
             return createQgate(div)
         end

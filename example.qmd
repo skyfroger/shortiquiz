@@ -4,57 +4,15 @@ filters:
   - shortiquiz
 ---
 
+## Вопрос с изображением
 
-## qparson
+:::{.qspot}
 
-:::{.qparson}
+> Подсказка к вопросу.
 
-```python
-n = int(input("Введите n:"))
-prod = 1
-for i in range(1, n+1):
-    prod = prod * i
-print("Произведение:", prod)
-```
+- Вопрос 1
+- Вопрос 2
 
-:::
-
-## qflip
-
-:::{.qflip}
-
-С помощью какой функции можно прочитать значение с аналогового пина Arduino?
-
----
-
-```c++
-analogRead(пин);
-```
-
-:::
-
-
-
-## Первый раздел
-
-Ответ 1: {{< qinput 1 gate=g1 >}}, ответ 2 {{< qinput 2 gate=g1 >}}.
-
-:::{.qgate name=g1}
-
-Следующий шаг открыт. {{< qinput 1 gate=g2 >}}
-
-
-
-:::
-
-:::{.qgate name=g2}
-
-Это второй этап. Вопрос {{< qinput 1 gate=g3 >}} вопрос вопрос {{< qinput 1 gate=g3 >}}.
-
-:::
-
-:::{.qgate name=g3}
-
-Это третий этап.
+![](example.assets/img.png)
 
 :::
