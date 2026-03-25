@@ -26,6 +26,10 @@
     overflow: visible;
     width: fit-content;
     transition: box-shadow 0.4s ease;
+
+    vertical-align: baseline;
+    line-height: 1;
+    box-sizing: border-box;
 }
 
 .qinput__container:hover {
@@ -49,6 +53,8 @@
 }
 
 .qinput__warning {
+    display: inline-flex;
+    align-items: center;
     height: 1.4em;
     background-color: var(--wrong-color);
     color: white;
@@ -83,11 +89,16 @@
     font-weight: bold;
 }
 
+.qselect__select,
+.qselect__select::picker(select) {
+    appearance: base-select;
+}
+
 .qselect__select {
     width: fit-content;
-    /* appearance: none; */
+    height: 1.4em;
+    border-radius: var(--border-radius);
     background-color: var(--primary-color);
-    padding: 0 0.3rem;
     border: none;
     outline: none;
     color: white;
@@ -98,9 +109,41 @@
 .qselect__select option {
     font-weight: normal;
     font-size: 1rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    color: white;
+    border-bottom: 1px dotted white;
+    padding: 0.3em;
+}
+
+.qselect__select option:disabled {
+    color: lightgray;
+}
+
+.qselect__select option:first-of-type {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.qselect__select option:last-of-type {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border-bottom: none;
+}
+
+.qselect__select::picker(select) {
+    border: none;
+    border-radius: var(--border-radius);
+    background: #0f82f2;
+    margin: 0.2em 0;
+}
+
+.qselect__select option::checkmark {
+    display: none;
 }
 
 .qinput__tooltip {
+    display: inline-flex;
+    align-items: center;
     height: 1.4em;
     cursor: pointer;
     background-color: var(--success-color);

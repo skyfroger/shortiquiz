@@ -4,6 +4,8 @@ filters:
   - shortiquiz
 ---
 
+Текст до вопроса {{< qselect "int|float|str" show="int()" mono=true >}}. Текст после вопроса. {{< qinput 2.5|2,5 hints="50% от значения напряжения" show="два с половиной" size=3 >}}
+
 ## Вопрос с изображением
 
 :::{.qspot area="26 34 29 50" gate=g1}
@@ -21,3 +23,4 @@ filters:
 Это разблокировка этапа.
 
 ::::
+
