@@ -75,7 +75,7 @@ return {
       answer: '???',
       isCorrect: false,
       attempt: 0,
-      correctAnswer: ']] .. correctAnswer .. [[',
+      correctAnswer: `]] .. correctAnswer .. [[`,
       get answerVisibility() { return this.isCorrect },
       get questionVisibility() { return !this.isCorrect },
       get wrong() { return this.answer !== '???' && this.answer !== this.correctAnswer },
