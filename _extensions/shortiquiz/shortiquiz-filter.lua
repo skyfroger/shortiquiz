@@ -1147,7 +1147,7 @@ function createQParson(div)
 
           const isSolutionLengthIncorrect = this.solution.length !== this.dest.length;
           if(isSolutionLengthIncorrect){
-            this.errorMessage = 'В решении не хватает блоков.';
+            this.errorMessage = 'В решении неправильное количество блоков.';
             return;
           }
 
