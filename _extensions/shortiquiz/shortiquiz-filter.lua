@@ -1010,9 +1010,6 @@ local function escapeHtmlDataAttribute(str)
         [">"] = "&gt;",
         ["&"] = "&amp;",
         [" "] = "&#32;",
-        ["\t"] = "&#9;",
-        ["\n"] = "&#10;",
-        ["\r"] = "&#13;"
     }
 
     return str:gsub('[&<>"\'\t\n\r ]', function(c)
@@ -1068,240 +1065,250 @@ function createQParson(div)
         languageClass = solutionCode.classes[1]
     end
 
-    lines = {}
+    local lines = {}
+    local solutionJSstr = "[" -- строка с js массивом решения задачи
     for s in (solutionCode.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
-        table.insert(lines, s)
+        local spCount = count_leading_spaces(s)
+        if spCount ~= #s then
+            local ind = #lines + 1
+            lines[ind] = s
+            solutionJSstr = solutionJSstr
+                .. string.format("{id: %d, code: String.raw`%s`, indent: %d},",
+                ind, escapeHtmlDataAttribute(string.sub(s, spCount + 1)), spCount // spacesPerLevel)
+        end
     end
-
-    local correctLinesString = escapeHtmlDataAttribute(table.concat(lines, [[`, `]]))
+    solutionJSstr = solutionJSstr .. "]"
 
     -- если есть дистракторы, добавляем их к блокам решения
     if distractors ~= nil then
         for s in (distractors.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
-            table.insert(lines, s)
+            if count_leading_spaces(s) ~= #s then
+                table.insert(lines, s)
+            end
         end
     end
 
-    -- TODO УДАЛЯТЬ ПУСТЫЕ СТРОКИ
+    ShuffleInPlace(lines) -- перемешиваем варианты ответов
 
-    -- определяем, какие блоки должны сами быть контейнерами для других блоков, а какие просто
-    -- блоками для перетаскивания
-    local isLineBlock = {}
-    for i = 1, (#lines - 1) do
-        currentLineSpaces = count_leading_spaces(lines[i])
-        nextLineSpaces = count_leading_spaces(lines[i + 1])
-
-        if nextLineSpaces > currentLineSpaces then
-            table.insert(isLineBlock, 1)
-        else
-            table.insert(isLineBlock, 0)
-        end
+    local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
+    for ind, val in pairs(lines) do
+        local spCount = count_leading_spaces(val)
+        sourceJSstr = sourceJSstr
+            .. string.format("{id: %d, code: String.raw`%s`, indent: 0, error: false},",
+            ind, escapeHtmlDataAttribute(string.sub(val, spCount + 1)))
     end
-    table.insert(isLineBlock, 0)                         -- последняя строка кода всегда не будет блоком
+    sourceJSstr = sourceJSstr .. "]"
 
-    local itemsList = {}                                 -- список элементов для перетаскивания
-    for i = 1, #lines do
-        local trimedLine = trim_initial_spaces(lines[i]) --lines[i]:gsub("^%s+", "")
-        local level = #(lines[i]:match("^(%s*)")) // spacesPerLevel
-        if isLineBlock[i] == 0 then
-            local itemDivContent = {
-                pandoc.RawBlock("html", [[<span data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]]),
-                pandoc.Code(trimedLine, { class = languageClass }),
-                pandoc.RawBlock("html", [[</span>]])
-            }
-            table.insert(itemsList,
-                pandoc.Div(itemDivContent,
-                    { class = "sort-item", ['data-level'] = tostring(level), ['x-sort:item'] = tostring(i) }))
-        else
-            local itemDivContent = {
-                pandoc.RawBlock("html", [[<span data-code-line="]] .. escapeHtmlDataAttribute(lines[i]) .. [[">]]),
-                pandoc.Code(trimedLine, { class = languageClass }),
-                pandoc.RawBlock("html", [[</span>
-                    <div class="code-block"
-                        x-sort.ghost
-                        x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
-                        x-sort:group="code-]] .. taskID .. [["
-                        x-sort="isShowFeedback = false"
-                        >
-                        <div class="empty-item" x-sort:item="999"></div>
-                    </div>]])
-            }
-            table.insert(itemsList,
-                pandoc.Div(itemDivContent,
-                    { class = "sort-item", ['data-level'] = tostring(level), ['x-sort:item'] = tostring(i) }))
-        end
-    end
-
-    ShuffleInPlace(itemsList) -- перемешиваем строки с кодом программы
-
-    local solutionText = solutionCode.text
-    if div.attributes["sep"] ~= nil then
-        solutionText = solutionCode.text:gsub(div.attributes["sep"], "")
-    end
-
+    -- начало разметки компонента
     table.insert(elementContent, pandoc.RawBlock("html", [[
-<div
+    <div
       x-data="{
-      isAnswered: false,
-      isShowFeedback: false,
-      attempt: 0,
-      maxHeight: 0,
-      linesArray: [`]] .. correctLinesString .. [[`],
-      errorMessage: 'В коде есть ошибка.',
-      feedback(){
-        this.attempt++; // счётчик попыток
-        this.isShowFeedback = true; // показать фидбек по вопросу
-        // Обратная связь
-        // Массив блоков в области решения
-        const sortItems = Array.from($el.querySelectorAll('.solution .sort-item'));
+        isAnswered: false,
+        isShowFeedback: false,
+        attempt: 0,
+        maxHeight: 0,
+        errorMessage: '', 
+        source: ]]..sourceJSstr..[[,
+        dest: [],
+        solution: ]]..solutionJSstr..[[,
+        maxIndent: 3, // максимальное количество отступов
+        indentCh: ]]..spacesPerLevel..[[, // можно брать из атрибута фильтра
 
-        // список элементов в области source, убираем класс error
-        const sourceSortItems = Array.from($el.querySelectorAll('.source .sort-item'));
-        sourceSortItems.forEach((sI, index)=>{
-            sI.classList.remove('error');
-        });
+        onSortEnd(item, pos, toArray) {
+          if(this.isShowFeedback) this.isShowFeedback = false;
+          let fromArray = this.source.indexOf(item) !== -1 ? this.source : this.dest;
+          fromArray.splice(fromArray.indexOf(item), 1);
+          toArray.splice(pos - 1, 0, item);
 
-        const isSolutionLengthCorrect = this.linesArray.length === sortItems.length;
-        if (!isSolutionLengthCorrect){
-            this.errorMessage = 'В решении задачи не хватает блоков.';
-        }
+          // сбрасываем отступ, если строка возвращается в 'источник'
+          if(fromArray === this.dest && toArray === this.source)
+            item.indent = 0;
+        },
+        incIndent(line){
+          if (this.isAnswered) return; // ответ правильный - отступы не меняем
+          line.indent = Math.min(this.maxIndent, line.indent + 1);
+          this.isShowFeedback = false;
+        },
+        decIndent(line){
+          if (this.isAnswered) return; // ответ правильный - отступы не меняем
+          line.indent = Math.max(0, line.indent - 1);
+          this.isShowFeedback = false;
+        },
+        indMarginString(line){
+          // значение отступа для margin-left у строки кода
+          return `${line.indent * this.indentCh}ch`;
+        },
+        isErrorLabelVisible(line){
+          return this.isShowFeedback && line.error;
+        },
+        feedback(){
+          this.attempt++;
+          this.isShowFeedback = true; // показать фидбек по вопросу
 
-        // перебираем блоки в области решения
-        let correctFlag = true;
+          const isSolutionLengthIncorrect = this.solution.length !== this.dest.length;
+          if(isSolutionLengthIncorrect){
+            this.errorMessage = 'В решении не хватает блоков.';
+            return;
+          }
 
-        sortItems.forEach((sI, index)=>{
-            sI.classList.remove('error');
-            if(this.isShowFeedback){
-                const itemSortIndex = Number(sI.getAttribute('x-sort:item'));
-
-                const blockLevel = Number(sI.getAttribute('data-level'));
-
-                /*
-                Чтобы узнать корректность вложенности блока, обращаемся к родительскому блоку.
-                Смотрим на атрибут data-level. Для корректно вложенных блоков разность уровней
-                должна быть равна единице.
-                */
-                let parent = sI.parentElement;
-                let guardCounter = 10; // счётчик-защита от зацикливания
-                while(!parent.getAttribute('data-level') && guardCounter > 0){
-                    parent = parent.parentElement;
-                    guardCounter--;
-                }
-                const parentBlockLevel = Number(parent.getAttribute('data-level'));
-
-                const code = sI.querySelector('span[data-code-line]').getAttribute('data-code-line');
-
-                // ошибка, если не соблюдается порядок расположения или уровень вложенности блока
-                if((blockLevel - parentBlockLevel) !== 1 ||
-                    code !== this.linesArray[index]){
-                    sI.classList.add('error');
-                    this.errorMessage = 'Неправильный порядок расположения блоков.';
-                    correctFlag = false;
-                }
-                else
-                    sI.classList.remove('error');
+          let isOrderOrIndentationIncorrect = false;
+          this.dest.forEach((line, index) => {
+            line.error = false;
+            if (line.code !== this.solution[index].code || 
+                line.indent !== this.solution[index].indent){
+              isOrderOrIndentationIncorrect = true;
+              line.error = true;
             }
-        });
+          })
 
-        this.isAnswered = correctFlag && isSolutionLengthCorrect;
-      },
-    }"
-    data-gate=']] .. gateName .. [['
-    x-init="const targetNode = $el;
+          if(isOrderOrIndentationIncorrect){
+            this.errorMessage = 'Неправильный порядок блоков или ошибки в отступах';
+            return;
+          }
 
-    // если меняется высота всего компонента, пересчитываем высоту блока
-    // который хранит строки кода
-    // это нужно, если элемент используется в qgroup или qgate
-    const observer = new ResizeObserver(entries => {
-        const codeBlocks = Array.from($el.querySelectorAll('.sort-item'));
-        maxHeight = codeBlocks.reduce((acc, node)=>{
-            return acc + node.offsetHeight;
-        }, 15);
-    });
-    observer.observe(targetNode);
-
-    $watch('isAnswered', value => {
-        console.log(isAnswered);
-        if (value) {
-            isCurrentAnswerCorrect = true;
-            $dispatch('answer-notification', {
-                isCorrect: true,
-                type: 'qparson',
-                gate: ']] .. gateName .. [[',
-                attempt: attempt
-            });
+          this.isShowFeedback = false; // показать фидбек по вопросу
+          this.errorMessage = '';
+          this.isAnswered = true;
         }
-    });
-    "> <!-- Начало компонента AlpineJs -->
+      }"
+      x-init="const targetNode = $el;
+      // если меняется высота всего компонента, пересчитываем высоту блока
+      // который хранит строки кода
+      // это нужно, если элемент используется в qgroup или qgate
+      const observer = new ResizeObserver(entries => {
+          const codeBlocks = Array.from($el.querySelectorAll('.sort-item'));
+          maxHeight = codeBlocks.reduce((acc, node)=>{
+              return acc + node.offsetHeight;
+          }, 15);
+      });
+      observer.observe(targetNode);
 
-
-    <div x-show="isAnswered" x-transition="" class="qmulti__result__badge qmulti__result__correct">
+      $watch('isAnswered', value => {
+          console.log(isAnswered);
+          if (value) {
+              isCurrentAnswerCorrect = true;
+              $dispatch('answer-notification', {
+                  isCorrect: true,
+                  type: 'qparson',
+                  gate: ']] .. gateName .. [[',
+                  attempt: attempt
+              });
+          }
+      });
+    "
+    >
+      <div
+        x-show="isAnswered"
+        x-transition=""
+        class="qmulti__result__badge qmulti__result__correct"
+        style="display: none"
+      >
         <span>✔</span>
-    </div>
-
-    <!-- скрытый элемент pre с правильным кодом решениям -->
-    <pre style="display: none;" x-ref="solutionPre">]] .. solutionText .. [[</pre>]]))
+      </div>
+]]))
 
     -- рендеринг условия задачи, если оно есть
     if #taskDescription ~= 0 then
         table.insert(elementContent, pandoc.Div(taskDescription, { class = "task__desc" }))
     end
 
-    table.insert(elementContent, pandoc.RawBlock("html",
-        [[
+    -- разметка для вариантов ответа и кнопок
+    table.insert(elementContent, pandoc.RawBlock("html",[[
+<!-- flex start -->
+      <div class="block__container">
+        <!-- Контейнер для вариантов ответа -->
+        <div
+          class="block-container source"
+          :style="`height: ${maxHeight}px`"
+          x-sort:config="{
+            filter: ()=>{return isAnswered ? 'sort-item' : ''},
+            swapThreshold: 0.5,
+            invertSwap: true,
+          }"
+          x-sort:group="parson-]]..taskID..[["
+          x-sort="(item, pos)=>{onSortEnd(item, pos, source)};"
+        >
+          <div style="display: none" x-sort:ignore></div>
+          <template x-for="line in source" :key="line.id">
+            <div class="sort-item" x-sort:item="line">
+              <button @click.stop="decIndent(line)">˂</button>
+              <button @click.stop="incIndent(line)">˃</button>
+              <code
+                class="sourceCode ]]..languageClass..[["
+                :style="'margin-left: ' + indMarginString(line);"
+                x-text="line.code"
+              ></code>
+            </div>
+          </template>
+        </div>
+        <!-- конец вариантов ответа  -->
 
-    <div class="block__container"> <!-- grid start -->
-      <div
-      x-sort="(item, position) => { isShowFeedback = false }"
-        x-sort.ghost
-        x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
-        x-sort:group="code-]] .. taskID .. [["
+        <!--контейнер для ответов  -->
+        <div
+          class="block-container solution"
+          :style="`height: ${maxHeight}px`"
+          x-sort:config="{
+            filter: ()=>{return isAnswered ? 'sort-item' : ''},
+            swapThreshold: 0.5,
+            invertSwap: true,
+          }"
+          x-sort:group="parson-]]..taskID..[["
+          x-sort="(item, pos)=>{onSortEnd(item, pos, dest)};"
+        >
+          <div style="display: none" x-sort:ignore></div>
+          <template x-for="line in dest" :key="line.id">
+            <div
+              :class="isErrorLabelVisible(line) ? 'error': '' "
+              class="sort-item"
+              x-sort:item="line"
+            >
+              <button @click.stop="decIndent(line)">˂</button>
+              <button @click.stop="incIndent(line)">˃</button>
+              <code
+                class="sourceCode ]]..languageClass..[["
+                :style="'margin-left: ' + indMarginString(line);"
+                x-text="line.code"
+                ></code>
+            </div>
+          </template>
+        </div>
+        <!-- конец контейнера для ответов -->
+      </div>
+      <!-- flex end -->
 
-        class="block-container source"
-        :style="`height: ${maxHeight}px`"
-      >
-        <div class="empty-item" x-sort:item="999"></div>
-]]))
-
-    --- добавляем перетаскиваемые элементы
-    for _, el in ipairs(itemsList) do
-        table.insert(elementContent, el)
-    end
-
-    table.insert(elementContent, pandoc.RawBlock("html", [[
-    </div>
-    <div
-    x-sort="(item, position) => { isShowFeedback = false }"
-        x-sort.ghost
-        x-sort:config="{ filter: ()=>{return isAnswered ? 'sort-item' : ''}, swapThreshold: 0.65}"
-        x-sort:group="code-]] .. taskID .. [["
-
-        class="block-container solution"
-        :style="`height: ${maxHeight}px`"
-        x-ref="result"
-        data-level="-1"
-    >
-        <div class="empty-item" x-sort:item="999"></div>
-    </div>
-    </div> <!-- flex end -->
-
-    <div class="header__buttons">
-        <div x-show="isAnswered" x-cloak x-transition>
-            <button class="copy_code" x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)">📋</button>
-            <span x-text="`Использовано попыток: ${attempt}`"></span>
+      <div class="header__buttons">
+        <div x-show="isAnswered" x-transition="" style="display: none">
+          <button
+            class="copy_code"
+            x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)"
+          >
+            📋
+          </button>
+          <span x-text="`Использовано попыток: ${attempt}`"
+            >Использовано попыток: 0</span
+          >
         </div>
 
         <button x-show="!isAnswered" x-on:click="feedback();">Проверить</button>
 
-        <div x-show="isShowFeedback === true" x-cloak x-transition>
-            <div x-cloak x-transition x-show="!isAnswered" class="qmulti__wrong_result">
-                <span x-text="errorMessage"></span>
-            </div>
+        <div
+          x-show="isShowFeedback === true"
+          x-transition=""
+          style="display: none"
+        >
+          <div
+            x-transition=""
+            x-show="!isAnswered"
+            class="qmulti__wrong_result"
+          >
+            <span x-text="errorMessage">В коде есть ошибка.</span>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 ]]))
 
+    -- готовый элемент
     return pandoc.Div(elementContent, { class = "qparson__ready" })
 end
 
