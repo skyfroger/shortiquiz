@@ -1074,11 +1074,11 @@ function createQParson(div)
             lines[ind] = s
             solutionJSstr = solutionJSstr
                 .. string.format("{id: %d, code: String.raw`%s`, indent: %d},",
-                ind, escapeHtmlDataAttribute(string.sub(s, spCount + 1)), spCount // spacesPerLevel)
+                ind, escapeHtmlDataAttribute(trim_initial_spaces(s)), spCount // spacesPerLevel)
         end
     end
     solutionJSstr = solutionJSstr .. "]"
-
+    
     -- если есть дистракторы, добавляем их к блокам решения
     if distractors ~= nil then
         for s in (distractors.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
@@ -1095,7 +1095,7 @@ function createQParson(div)
         local spCount = count_leading_spaces(val)
         sourceJSstr = sourceJSstr
             .. string.format("{id: %d, code: String.raw`%s`, indent: 0, error: false},",
-            ind, escapeHtmlDataAttribute(string.sub(val, spCount + 1)))
+            ind, escapeHtmlDataAttribute(trim_initial_spaces(val)))
     end
     sourceJSstr = sourceJSstr .. "]"
 
@@ -1171,30 +1171,30 @@ function createQParson(div)
           this.isAnswered = true;
         }
       }"
+      data-gate=']] .. gateName .. [['
       x-init="const targetNode = $el;
-      // если меняется высота всего компонента, пересчитываем высоту блока
-      // который хранит строки кода
-      // это нужно, если элемент используется в qgroup или qgate
-      const observer = new ResizeObserver(entries => {
-          const codeBlocks = Array.from($el.querySelectorAll('.sort-item'));
-          maxHeight = codeBlocks.reduce((acc, node)=>{
-              return acc + node.offsetHeight;
-          }, 15);
-      });
-      observer.observe(targetNode);
+        // если меняется высота всего компонента, пересчитываем высоту блока
+        // который хранит строки кода
+        // это нужно, если элемент используется в qgroup или qgate
+        const observer = new ResizeObserver(entries => {
+            const codeBlocks = Array.from($el.querySelectorAll('.sort-item'));
+            maxHeight = codeBlocks.reduce((acc, node)=>{
+                return acc + node.offsetHeight;
+            }, 15);
+        });
+        observer.observe(targetNode);
 
-      $watch('isAnswered', value => {
-          console.log(isAnswered);
-          if (value) {
-              isCurrentAnswerCorrect = true;
-              $dispatch('answer-notification', {
-                  isCorrect: true,
-                  type: 'qparson',
-                  gate: ']] .. gateName .. [[',
-                  attempt: attempt
-              });
-          }
-      });
+        $watch('isAnswered', value => {
+            if (value) {
+                isCurrentAnswerCorrect = true;
+                $dispatch('answer-notification', {
+                    isCorrect: true,
+                    type: 'qparson',
+                    gate: ']] .. gateName .. [[',
+                    attempt: attempt
+                });
+            }
+        });
     "
     >
       <div
