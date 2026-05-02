@@ -670,6 +670,7 @@
 
 .qparson__ready .sort-item code {
     padding: 0;
+    font-size: 0.975em;
 }
 
 .qparson__ready .sortable-ghost {

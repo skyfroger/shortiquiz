@@ -1072,9 +1072,14 @@ function createQParson(div)
         if spCount ~= #s then
             local ind = #lines + 1
             lines[ind] = s
+
+            local code_element = pandoc.Code(trim_initial_spaces(s), { class = languageClass })
+            local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
+            local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
+
             solutionJSstr = solutionJSstr
-                .. string.format("{id: %d, code: String.raw`%s`, indent: %d},",
-                ind, escapeHtmlDataAttribute(trim_initial_spaces(s)), spCount // spacesPerLevel)
+                .. string.format("{id: %d, code: String.raw`%s`, hl: String.raw`%s`, indent: %d},",
+                ind, escapeHtmlDataAttribute(trim_initial_spaces(s)), hl, spCount // spacesPerLevel)
         end
     end
     solutionJSstr = solutionJSstr .. "]"
@@ -1092,10 +1097,14 @@ function createQParson(div)
 
     local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
     for ind, val in pairs(lines) do
-        local spCount = count_leading_spaces(val)
+        
+        local code_element = pandoc.Code(trim_initial_spaces(val), { class = languageClass })
+        local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
+        local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
+        
         sourceJSstr = sourceJSstr
-            .. string.format("{id: %d, code: String.raw`%s`, indent: 0, error: false},",
-            ind, escapeHtmlDataAttribute(trim_initial_spaces(val)))
+            .. string.format("{id: %d, code: String.raw`%s`, hl: String.raw`%s`, indent: 0, error: false},",
+            ind, escapeHtmlDataAttribute(trim_initial_spaces(val)), hl)
     end
     sourceJSstr = sourceJSstr .. "]"
 
@@ -1234,9 +1243,8 @@ function createQParson(div)
               <button @click.stop="decIndent(line)">˂</button>
               <button @click.stop="incIndent(line)">˃</button>
               <code
-                class="sourceCode ]]..languageClass..[["
                 :style="'margin-left: ' + indMarginString(line);"
-                x-text="line.code"
+                x-html="line.hl"
               ></code>
             </div>
           </template>
@@ -1265,9 +1273,8 @@ function createQParson(div)
               <button @click.stop="decIndent(line)">˂</button>
               <button @click.stop="incIndent(line)">˃</button>
               <code
-                class="sourceCode ]]..languageClass..[["
                 :style="'margin-left: ' + indMarginString(line);"
-                x-text="line.code"
+                x-html="line.hl"
                 ></code>
             </div>
           </template>
