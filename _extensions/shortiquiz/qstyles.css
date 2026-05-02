@@ -654,7 +654,7 @@
 
 .qparson__ready .sort-item {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 0.2em;
     position: relative;
     cursor: grab;
@@ -668,9 +668,20 @@
         rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
+.qparson__ready .sort-item .code__wrapper {
+    display: flex;
+    align-items: center; /* тянемся на всю высоту */
+    flex: 1; /* занимает доступное пространство */
+    min-height: 100%;
+    box-sizing: border-box;
+    margin: -0.3em 0;
+}
+
 .qparson__ready .sort-item code {
     padding: 0;
     font-size: 0.975em;
+    border-radius: 0;
+    padding-left: 0.1em;
 }
 
 .qparson__ready .sortable-ghost {

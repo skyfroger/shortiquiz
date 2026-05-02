@@ -1060,7 +1060,7 @@ function createQParson(div)
     if solutionCode == nil then return pandoc.Div('') end -- внутри qparson нет кода решения; завершаем работу функции
 
     -- язык подстветки кода
-    local languageClass = "python"
+    local languageClass = "markdown"
     if #solutionCode.classes > 0 then
         languageClass = solutionCode.classes[1]
     end
@@ -1073,6 +1073,7 @@ function createQParson(div)
             local ind = #lines + 1
             lines[ind] = s
 
+            -- получаем разметку с подсветкой синтаксиса для строки кода
             local code_element = pandoc.Code(trim_initial_spaces(s), { class = languageClass })
             local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
             local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
@@ -1097,7 +1098,7 @@ function createQParson(div)
 
     local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
     for ind, val in pairs(lines) do
-        
+        -- получаем разметку с подсветкой синтаксиса для строки кода
         local code_element = pandoc.Code(trim_initial_spaces(val), { class = languageClass })
         local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
         local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
@@ -1143,9 +1144,17 @@ function createQParson(div)
           line.indent = Math.max(0, line.indent - 1);
           this.isShowFeedback = false;
         },
+        codeWrapperStyle(line){
+            const colors = ['#fff0', '#60B99A', '#D3CE3D', '#F77825'];
+            return `margin-left: ${this.indMarginString(line)}; border-left: 3px solid ${colors[line.indent]};`;
+        },
         indMarginString(line){
           // значение отступа для margin-left у строки кода
           return `${line.indent * this.indentCh}ch`;
+        },
+        indentColorGenerator(indent){
+          const colors = ['#fff0', '#60B99A', '#D3CE3D', '#F77825'];
+          return colors[indent];
         },
         isErrorLabelVisible(line){
           return this.isShowFeedback && line.error;
@@ -1242,10 +1251,11 @@ function createQParson(div)
             <div class="sort-item" x-sort:item="line">
               <button @click.stop="decIndent(line)">˂</button>
               <button @click.stop="incIndent(line)">˃</button>
-              <code
-                :style="'margin-left: ' + indMarginString(line);"
-                x-html="line.hl"
-              ></code>
+              <div 
+                class="code__wrapper"
+                :style="codeWrapperStyle(line)">
+                <code x-html="line.hl"></code>
+              </div>
             </div>
           </template>
         </div>
@@ -1272,10 +1282,11 @@ function createQParson(div)
             >
               <button @click.stop="decIndent(line)">˂</button>
               <button @click.stop="incIndent(line)">˃</button>
-              <code
-                :style="'margin-left: ' + indMarginString(line);"
-                x-html="line.hl"
-                ></code>
+              <div 
+                class="code__wrapper"
+                :style="codeWrapperStyle(line)">
+                <code x-html="line.hl"></code>
+              </div>
             </div>
           </template>
         </div>
