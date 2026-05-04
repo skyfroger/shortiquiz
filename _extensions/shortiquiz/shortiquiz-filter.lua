@@ -1126,9 +1126,11 @@ function createQParson(div)
 
         onSortEnd(item, pos, toArray) {
           if(this.isShowFeedback) this.isShowFeedback = false;
-          let fromArray = this.source.indexOf(item) !== -1 ? this.source : this.dest;
-          fromArray.splice(fromArray.indexOf(item), 1);
-          toArray.splice(pos - 1, 0, item);
+          let fromArray = this.source.findIndex(i => i.id === item.id) !== -1
+                ? this.source
+                : this.dest;
+          fromArray.splice(fromArray.findIndex(i => i.id === item.id), 1);
+          toArray.splice(pos, 0, item);
 
           // сбрасываем отступ, если строка возвращается в 'источник'
           if(fromArray === this.dest && toArray === this.source)
@@ -1246,7 +1248,6 @@ function createQParson(div)
           x-sort:group="parson-]]..taskID..[["
           x-sort="(item, pos)=>{onSortEnd(item, pos, source)};"
         >
-          <div style="display: none" x-sort:ignore></div>
           <template x-for="line in source" :key="line.id">
             <div class="sort-item" x-sort:item="line">
               <button @click.stop="decIndent(line)">˂</button>
@@ -1273,7 +1274,6 @@ function createQParson(div)
           x-sort:group="parson-]]..taskID..[["
           x-sort="(item, pos)=>{onSortEnd(item, pos, dest)};"
         >
-          <div style="display: none" x-sort:ignore></div>
           <template x-for="line in dest" :key="line.id">
             <div
               :class="isErrorLabelVisible(line) ? 'error': '' "
