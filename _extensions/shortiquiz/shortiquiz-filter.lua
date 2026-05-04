@@ -1296,12 +1296,14 @@ function createQParson(div)
 
       <div class="header__buttons">
         <div x-show="isAnswered" x-transition="" style="display: none">
+          <!-- временно убираем копирование в буфер обмена решения задачи
           <button
             class="copy_code"
             x-on:click="navigator.clipboard.writeText($refs.solutionPre.innerText)"
           >
             📋
-          </button>
+          </button> 
+          -->
           <span x-text="`Использовано попыток: ${attempt}`"
             >Использовано попыток: 0</span
           >
