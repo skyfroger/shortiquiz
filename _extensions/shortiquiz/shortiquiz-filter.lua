@@ -1131,16 +1131,8 @@ function createQParson(div)
             
 
             const fromIndex = fromArray.findIndex(i => i.id === item.id);
-            if (fromIndex !== -1) {
-                fromArray.splice(fromIndex, 1);
-            }
-
-            if (fromArray === toArray) {
-                const adjustedPos = pos > fromIndex ? pos - 1 : pos;
-                toArray.splice(adjustedPos, 0, item);
-            } else {
-                toArray.splice(pos, 0, item);
-            }
+            fromArray.splice(fromIndex, 1);
+            toArray.splice(pos, 0, item);
 
             item.container = toArray === this.source ? 'source' : 'dest';
 

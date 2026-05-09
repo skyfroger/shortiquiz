@@ -8,14 +8,11 @@ filters:
 
 Это условие задачи.
 
-```python
-for i in range(1, 7):
-    name = input("name")
-    print(name)
 ```
-
-```python
-print(age)
+1
+2
+3
+4
 ```
 
 :::
