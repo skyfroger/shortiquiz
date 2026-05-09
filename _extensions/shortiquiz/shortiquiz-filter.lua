@@ -1104,7 +1104,7 @@ function createQParson(div)
         local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
         
         sourceJSstr = sourceJSstr
-            .. string.format("{id: %d, code: String.raw`%s`, hl: String.raw`%s`, indent: 0, error: false},",
+            .. string.format("{id: %d, container: 'source', code: String.raw`%s`, hl: String.raw`%s`, indent: 0, error: false},",
             ind, escapeHtmlDataAttribute(trim_initial_spaces(val)), hl)
     end
     sourceJSstr = sourceJSstr .. "]"
@@ -1125,16 +1125,30 @@ function createQParson(div)
         indentCh: ]]..spacesPerLevel..[[, // можно брать из атрибута фильтра
 
         onSortEnd(item, pos, toArray) {
-          if(this.isShowFeedback) this.isShowFeedback = false;
-          let fromArray = this.source.findIndex(i => i.id === item.id) !== -1
-                ? this.source
-                : this.dest;
-          fromArray.splice(fromArray.findIndex(i => i.id === item.id), 1);
-          toArray.splice(pos, 0, item);
+            if(this.isShowFeedback) this.isShowFeedback = false;
+            
+            const fromArray = item.container === 'source' ? this.source : this.dest;
+            
 
-          // сбрасываем отступ, если строка возвращается в 'источник'
-          if(fromArray === this.dest && toArray === this.source)
-            item.indent = 0;
+            const fromIndex = fromArray.findIndex(i => i.id === item.id);
+            if (fromIndex !== -1) {
+                fromArray.splice(fromIndex, 1);
+            }
+
+            if (fromArray === toArray) {
+                const adjustedPos = pos > fromIndex ? pos - 1 : pos;
+                toArray.splice(adjustedPos, 0, item);
+            } else {
+                toArray.splice(pos, 0, item);
+            }
+
+            item.container = toArray === this.source ? 'source' : 'dest';
+
+            // сбрасываем отступ, если строка возвращается в 'источник'
+            if (toArray === this.source) {
+                item.indent = 0;
+                item.error = false;
+            }
         },
         incIndent(line){
           if (this.isAnswered) return; // ответ правильный - отступы не меняем
