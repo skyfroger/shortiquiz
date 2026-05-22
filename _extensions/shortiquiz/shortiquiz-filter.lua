@@ -1,10 +1,16 @@
 local function writeEnvironments()
     if quarto.doc.is_format("html:js") then
         quarto.doc.add_html_dependency({
+            name = "alpine-sort",
+            version = "3.15",
+            scripts = {
+                { path = "sort-alpine.min.js", afterBody = "true" },
+            },
+        })
+        quarto.doc.add_html_dependency({
             name = "alpine",
             version = "3.12",
             scripts = {
-                { path = "sort-alpine.min.js", afterBody = "true" },
                 { path = "alpine.min.js",      afterBody = "true" }
             },
         })
