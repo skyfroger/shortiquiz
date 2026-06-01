@@ -1256,8 +1256,8 @@ function createQParson(div)
         >
           <template x-for="line in source" :key="line.id">
             <div class="sort-item" x-sort:item="line">
-              <button @click.stop="decIndent(line)">˂</button>
-              <button @click.stop="incIndent(line)">˃</button>
+              <button x-sort:ignore @click.stop="decIndent(line)">˂</button>
+              <button x-sort:ignore @click.stop="incIndent(line)">˃</button>
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
@@ -1286,8 +1286,8 @@ function createQParson(div)
               class="sort-item"
               x-sort:item="line"
             >
-              <button @click.stop="decIndent(line)">˂</button>
-              <button @click.stop="incIndent(line)">˃</button>
+              <button x-sort:ignore @click.stop="decIndent(line)">˂</button>
+              <button x-sort:ignore @click.stop="incIndent(line)">˃</button>
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
