@@ -5,23 +5,21 @@ local l10n  = require("./localize")
 
 
 function createQinput(div)
-    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()        -- loading all scripts and css stylesheets
 
-    local question = {}              -- разметка всего вопроса
+    local question = {}              -- question markup
 
-    local questionContent = {}       -- содержимое вопроса
-    local hint = nil                 -- подсказка
-    local stems = nil                -- варианты ответа
-    local qName = utils.RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
+    local questionContent = {}       -- question content
+    local hint = nil                 -- hint
+    local stems = nil                -- question stems
 
     local gateName = ""
 
-    -- имя гейта
+    -- gate name
     if div.attributes["gate"] ~= nil then
         gateName = div.attributes["gate"]
     end
 
-    -- quarto.log.output(div)
     for _, el in ipairs(div.content) do
         if el.t == "BlockQuote" then
             hint = el.content
@@ -32,21 +30,21 @@ function createQinput(div)
         end
     end
 
-    -- пропускаем рендеринг вопроса, если нет формулировки вопроса, списка ответов или в нём только 1 вариант
+    -- skip question without content or stems
     if #questionContent == 0 or stems == nil or #stems.content < 1 then return pandoc.Div('') end
 
-    local stemHints = {} -- подсказки для вариантов ответа
+    local stemHints = {}
     local correctAnswer = nil
     for i, item in ipairs(stems.content) do
         local qHint = nil
         local answer = nil
 
-        -- ищем в вопросе параграфы и блок-цитату
+        -- search for paragraphs and quote block
         for _, block in ipairs(item) do
             if block.t == "Para" or block.t == "Plain" then
                 answer = block.content[1].text
             elseif block.t == "BlockQuote" then
-                qHint = block -- содержимое цитаты станет подсказкой к ответу
+                qHint = block -- content of the quote block will become a hint
             end
         end
 
@@ -68,10 +66,9 @@ function createQinput(div)
             table.insert(stemHints, pandoc.Div(qHint.content))
             table.insert(stemHints, pandoc.RawBlock("html", [[</div>]]))
         end
-        -- quarto.log.output(hint)
     end
 
-    -- открывающий div; есть отдельный стиль, если ответили с первой попытки
+    -- opening div
     table.insert(question,
         pandoc.RawBlock("html",
             [[<div class="qmulti" :class="isAnswerCorrect && attempt === 1 && 'qmulti_first_try'"
@@ -174,32 +171,28 @@ function createQinput(div)
 
     table.insert(question, pandoc.Div(stemHints))
 
-    table.insert(question, pandoc.RawBlock("html", [[</div>]])) -- закрывающий div
+    table.insert(question, pandoc.RawBlock("html", [[</div>]])) -- closing div
 
     return pandoc.Div(question, { class = "qinput__formated" })
 end
 
--- TODO опциональный параметр - является ли вопрос частью группы
--- по умолчанию - нет (не добавлять изменение переменной isCurrentAnswerCorrect = true;)
-
 function createQmutli(div)
-    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()              
 
-    local question = {}              -- разметка всего вопроса
+    local question = {}              
 
-    local questionContent = {}       -- содержимое вопроса
-    local hint = nil                 -- подсказка
-    local stems = nil                -- варианты ответа
-    local qName = utils.RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
+    local questionContent = {}       
+    local hint = nil                 
+    local stems = nil                
+    local qName = utils.RandomStringID(10) -- unique name for stems
 
     local gateName = ""
 
-    -- имя гейта
+    -- gate name
     if div.attributes["gate"] ~= nil then
         gateName = div.attributes["gate"]
     end
 
-    -- quarto.log.output(div)
     for _, el in ipairs(div.content) do
         if el.t == "BlockQuote" then
             hint = el.content
@@ -210,27 +203,26 @@ function createQmutli(div)
         end
     end
 
-    -- пропускаем рендеринг вопроса, если нет формулировки вопроса, списка ответов или в нём только 1 вариант
+    -- skip rendering if question format is incorrect
     if #questionContent == 0 or stems == nil or #stems.content < 2 then return pandoc.Div('') end
 
-    local stemHints = {}       -- подсказки для вариантов ответа
-    local questionOptions = {} -- список всех ответов
+    local stemHints = {}
+    local questionOptions = {}
     for i, item in ipairs(stems.content) do
-        local fullStem = {}    -- вариант ответа со всей разметко Alpinejs
+        local fullStem = {}    -- one stem with all Alpinejs markup
         local option = {}
         local qHint = nil
-        local qId = utils.RandomStringID(10) -- id для label
+        local qId = utils.RandomStringID(10) -- id for label tag
 
-        -- ищем в вопросе параграфы и блок-цитату
         for _, block in ipairs(item) do
             if block.t == "Para" or block.t == "CodeBlock" or block.t == "Image" or block.t == "Plain" then
-                table.insert(option, block) -- параграфы сохраняем в список
+                table.insert(option, block)
             elseif block.t == "BlockQuote" then
-                qHint = block               -- содержимое цитаты станет подсказкой к ответу
+                qHint = block
             end
         end
 
-        -- первый вариант ответа всегда считается правильным и для него
+        -- first stem will be correct
         local classRule = [[answer === ']] .. (i - 1) .. [[' && isAnswered && 'qmulti__wrong']]
         local correctAnswerAction = ""
         local hintStyle = "qmulti__wrong_result"
@@ -267,12 +259,11 @@ function createQmutli(div)
         end
 
         table.insert(questionOptions, pandoc.Div(fullStem))
-        -- quarto.log.output(hint)
     end
 
     utils.ShuffleInPlace(questionOptions)
 
-    -- открывающий div; есть отдельный стиль, если ответили с первой попытки
+    -- opening div
     table.insert(question,
         pandoc.RawBlock("html",
             [[<div class="qmulti" :class="isAnswerCorrect && attempt === 1 && 'qmulti_first_try'"
@@ -328,20 +319,20 @@ function createQmutli(div)
 
     table.insert(question, pandoc.Div(stemHints))
 
-    table.insert(question, pandoc.RawBlock("html", [[</div>]])) -- закрывающий div
+    table.insert(question, pandoc.RawBlock("html", [[</div>]])) -- closing div
 
     return pandoc.Div(question, { class = "qmulti__formated" })
 end
 
 function createQcheck(div)
-    utils.writeEnvironments()        -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()
 
-    local question = {}        -- разметка всего вопроса
+    local question = {}        
 
-    local questionContent = {} -- содержимое вопроса
-    local hint = nil           -- подсказка
-    local stems = nil          -- варианты ответа
-    -- quarto.log.output(div)
+    local questionContent = {}
+    local hint = nil
+    local stems = nil
+
     for _, el in ipairs(div.content) do
         if el.t == "BlockQuote" then
             hint = el.content
@@ -353,12 +344,12 @@ function createQcheck(div)
     end
 
     local gateName = ""
-    -- имя гейта
+    -- gate name
     if div.attributes["gate"] ~= nil then
         gateName = div.attributes["gate"]
     end
 
-    local correctAnswersCount = 0 -- количество правильных ответов
+    local correctAnswersCount = 0
     local wrongAnswerValue = 0    -- первое значения для неправильного ответа (увеличивается на -1000)
     local questionOptions = {}    -- список всех ответов
     for i, item in ipairs(stems.content) do
