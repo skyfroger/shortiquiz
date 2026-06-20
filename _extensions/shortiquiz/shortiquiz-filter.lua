@@ -1,6 +1,7 @@
 local EXTENSION_NAME = "shortiquiz"
 
 local utils = require("./utils")
+local l10n  = require("./localize")
 
 
 function createQinput(div)
@@ -155,7 +156,7 @@ function createQinput(div)
             }"
             type="text"
             x-model.lazy="answer"
-            placeholder="Введите ответ"
+            placeholder="]]..l10n("inputPlaceholder")..[["
             x-on:change="checkAnswer"
             :disabled="isAnswerCorrect"
         />
@@ -167,7 +168,7 @@ function createQinput(div)
             x-show="!isAnswerCorrect"
             x-transition
             x-on:click="checkAnswer"
-        >✓ Проверить</button>
+        >✓ ]]..l10n("checkAnswer")..[[</button>
     </div>
     ]]))
 
@@ -516,7 +517,7 @@ function createQcheck(div)
                 isAnswerCorrect = answers.reduce((acc, cur)=> acc + Number(cur), 0) === ]] .. correctSum .. [[;
                 attempt = isAnswered ? attempt + 1: attempt;"
             >
-                ✓ Проверить
+                ✓ ]]..l10n("checkAnswer")..[[
             </button>
             ]]))
 
@@ -582,7 +583,7 @@ function createQsolution(div)
                     x-show="visibleHintIndex < ]] .. numberOfhints .. [["
                     x-on:click="visibleHintIndex++"
                 >
-                    💡 Получить подсказку
+                    💡 ]].. l10n("getAHint") ..[[
                 </button>
                 </div>
                 ]]))
@@ -600,7 +601,7 @@ function createQsolution(div)
                     x-show="isSolutionActive && !isSolutionVisible"
                     x-on:click="isSolutionVisible = true"
                 >
-                    🗝️ Получить решение
+                    🗝️ ]]..l10n("solution")..[[
                 </button>
                 </div>
                 ]]))
@@ -655,7 +656,7 @@ function createQsolution(div)
                 x-show="currentLine < maskedSpans.length - 1"
                 x-on:click="currentLine++"
             >
-                Следующий шаг решения
+                ]].. l10n("nextStep") ..[[
             </button>
             <button
             class="solution__button full_solution"
@@ -667,7 +668,7 @@ function createQsolution(div)
             x-on:click="
                 maskedSpans.forEach(line => line.classList.remove('code__mask'));
                 currentLine = maskedSpans.length;
-            ">🗝️ Показать всё решение</button>
+            ">🗝️ ]]..l10n("showFullSolution")..[[</button>
             </div>
             ]]))
     end
@@ -744,7 +745,7 @@ function createQgroup(div)
     })"
     >
     <div class="qgroup__header">
-        <span x-text="`Вопрос ${currentIndex + 1} из ${totalSlides}`"></span>
+        <span x-text="`]]..l10n("question")..[[ ${currentIndex + 1}/${totalSlides}`"></span>
     <button
         :class="isCurrentAnswerCorrect ? 'qgroup__pusle': ''"
         x-show="!isQuizFinished && (currentIndex + 1 < totalSlides)"
@@ -752,7 +753,7 @@ function createQgroup(div)
         :disabled="!isCurrentAnswerCorrect"
         x-on:click="next(); isCurrentAnswerCorrect = false"
     >
-        Следующий вопрос ▷
+        ]] .. l10n("nextQuestion") .. [[ ▷
     </button>
     <div x-show="isQuizFinished">
         <button x-on:click="prev">◁</button>
@@ -1105,7 +1106,7 @@ function createQParson(div)
 
           const isSolutionLengthIncorrect = this.solution.length !== this.dest.length;
           if(isSolutionLengthIncorrect){
-            this.errorMessage = 'В решении неправильное количество блоков.';
+            this.errorMessage = ']]..l10n("incorrectNumberOfBlocks")..[[';
             return;
           }
 
@@ -1120,7 +1121,7 @@ function createQParson(div)
           })
 
           if(isOrderOrIndentationIncorrect){
-            this.errorMessage = 'Неправильный порядок блоков или ошибки в отступах';
+            this.errorMessage = ']]..l10n("incorrectOrderOfBlocks")..[[';
             return;
           }
 
@@ -1247,7 +1248,7 @@ function createQParson(div)
           >
         </div>
 
-        <button x-show="!isAnswered" x-on:click="feedback();">Проверить</button>
+        <button x-show="!isAnswered" x-on:click="feedback();">✓ ]]..l10n("checkAnswer")..[[</button>
 
         <div
           x-show="isShowFeedback === true"
@@ -1498,7 +1499,7 @@ function createQspot(div)
     end
 
     table.insert(question, pandoc.RawBlock("html", [[
-    <p class="qspot__instruction">Кликните по изображению чтобы выбрать ответ.</p>
+    <p class="qspot__instruction">]]..l10n("qSpotInstruction")..[[</p>
     <div class="qspot__container__wraper">
     
     <div data-qid="]]..qId..[[" class="qspot__container" x-on:click="hitTest($event)">
@@ -1521,7 +1522,7 @@ function createQspot(div)
                 x-transition
                 x-on:click="attempt++; isAnswerCorrect = isCorrectHit; if (!isCorrectHit) shake();"
             >
-                ✓ Проверить
+                ✓ ]]..l10n("checkAnswer")..[[
             </button>
     </div>
     </div>
@@ -1530,53 +1531,79 @@ function createQspot(div)
     return pandoc.Div(question, { class = "qspot__formated" })
 end
 
-if quarto.doc.isFormat("html:js") then
-    Div = function(div)
-        -- # Вопрос с одним правильным ответом # --
-        if div.classes:includes("qmulti") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQmutli(div)
-        end
+local function render_elements(options)
 
-        -- # Вопрос с несколькими правильными ответами # --
-        if div.classes:includes("qcheck") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQcheck(div)
-        end
+    l10n.load(options.lang)
 
-        -- # Вопрос с несколькими правильными ответами # --
-        if div.classes:includes("qinput") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQinput(div)
-        end
+    return {
+        Div = function(div)
+            if quarto.doc.isFormat("html:js") then
+                -- # Вопрос с одним правильным ответом # --
+                if div.classes:includes("qmulti") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQmutli(div)
+                end
 
-        -- # Подсказки и решение задачи # --
-        if div.classes:includes("qsolution") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQsolution(div)
-        end
+                -- # Вопрос с несколькими правильными ответами # --
+                if div.classes:includes("qcheck") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQcheck(div)
+                end
 
-        if div.classes:includes("qgroup") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQgroup(div)
-        end
+                -- # Вопрос с несколькими правильными ответами # --
+                if div.classes:includes("qinput") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQinput(div)
+                end
 
-        if div.classes:includes("qflashcards") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQflashcards(div)
-        end
+                -- # Подсказки и решение задачи # --
+                if div.classes:includes("qsolution") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQsolution(div)
+                end
 
-        if div.classes:includes("qparson") then
-            return createQParson(div)
-        end
+                if div.classes:includes("qgroup") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQgroup(div)
+                end
 
-        if div.classes:includes("qflip") then
-            return createQflip(div)
-        end
+                if div.classes:includes("qflashcards") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQflashcards(div)
+                end
 
-        if div.classes:includes("qspot") then
-            return createQspot(div)
-        end
+                if div.classes:includes("qparson") then
+                    return createQParson(div)
+                end
 
-        -- # Ворота - обработка в последнюю очередь # --
-        if div.classes:includes("qgate") then -- если div содержит нужный стиль - обрабатываем разметку
-            return createQgate(div)
-        end
+                if div.classes:includes("qflip") then
+                    return createQflip(div)
+                end
 
-        return nil
+                if div.classes:includes("qspot") then
+                    return createQspot(div)
+                end
+
+                -- # Ворота - обработка в последнюю очередь # --
+                if div.classes:includes("qgate") then -- если div содержит нужный стиль - обрабатываем разметку
+                    return createQgate(div)
+                end
+
+                return nil
+            end
+            return nil
+        end
+    }
+
+end
+
+function Pandoc(doc)
+  -- default options
+  local options = {
+    lang = pandoc.utils.stringify(doc.meta.lang)
+  }
+
+  -- replace default option with local 
+  local globalOptions = doc.meta[EXTENSION_NAME]
+  if type(globalOptions) == "table" then
+    for k, v in pairs(globalOptions) do
+      options[k] = pandoc.utils.stringify(v)
     end
+  end
+
+  return doc:walk(render_elements(options))
 end
