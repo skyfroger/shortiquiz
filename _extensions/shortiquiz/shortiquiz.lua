@@ -1,63 +1,17 @@
-local function writeEnvironments()
-  if quarto.doc.is_format("html:js") then
-    quarto.doc.add_html_dependency({
-      name = "alpine",
-      version = "3.12",
-      scripts = {
-        { path = "sort-alpine.min.js", afterBody = "true" },
-        { path = "alpine.min.js", afterBody = "true" } },
-    })
-    quarto.doc.add_html_dependency({
-      name = "qstyles",
-      version = "1",
-      stylesheets = { "qstyles.css" }
-    })
-  end
-end
+local EXTENSION_NAME = "shortiquiz"
 
-local function escapeHtmlDataAttribute(str)
-  local entities = {
-    ['"'] = "&quot;",
-    ["'"] = "&#39;",
-    ["<"] = "&lt;",
-    [">"] = "&gt;",
-    ["&"] = "&amp;",
-    [" "] = "&#32;",
-    ["\t"] = "&#9;",
-    ["\n"] = "&#10;",
-    ["\r"] = "&#13;"
-  }
+local utils = require("./utils")
 
-  return str:gsub('[&<>"\'\t\n\r ]', function(c)
-    return entities[c] or c
-  end)
-end
-
-local function ShuffleInPlace(t)
-  for i = #t, 2, -1 do
-    local j = math.random(i)
-    t[i], t[j] = t[j], t[i]
-  end
-end
-
--- Для случайных ID
-function RandomStringID(length)
-  local res = ""
-  for i = 1, length do
-    res = res .. string.char(math.random(97, 122))
-  end
-  return res
-end
 
 return {
   ['qselect'] = function(args, kwargs, meta)
     -- TODO добавить выбор стиля: обычный текст или моноширный.
-    writeEnvironments()
-    local optionsStr = escapeHtmlDataAttribute(pandoc.utils.stringify(args[1]))
+    utils.writeEnvironments()
+    local optionsStr = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(args[1]))
 
-    local showText = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["show"]))
+    local showText = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["show"]))
     local mono = pandoc.utils.stringify(kwargs["mono"])
-    local g = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
+    local g = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
 
     local delimiter = "|"
     local options = {}
@@ -105,7 +59,7 @@ return {
         <option disabled>???</option>]]
 
     -- перемешиваем ответы, чтобы правильный ответ не всегда был первым в списке
-    ShuffleInPlace(options)
+    utils.ShuffleInPlace(options)
 
     for _, option in ipairs(options) do
       html = html .. '<option>' .. option .. '</option>'
@@ -129,14 +83,14 @@ return {
     return pandoc.RawBlock('html', html)
   end,
   ['qinput'] = function(args, kwargs, meta)
-    writeEnvironments()
-    local correctAnswer = escapeHtmlDataAttribute(args[1])
-    local showText = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["show"]))
+    utils.writeEnvironments()
+    local correctAnswer = utils.escapeHtmlDataAttribute(args[1])
+    local showText = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["show"]))
     local hintsText = pandoc.utils.stringify(kwargs["hints"])
     local size = pandoc.utils.stringify(kwargs["size"])
     local mono = pandoc.utils.stringify(kwargs["mono"])
     local tol = pandoc.utils.stringify(kwargs["tol"])
-    local g = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
+    local g = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
 
 
     -- размер поля для ввода по умолчанию
@@ -204,7 +158,7 @@ return {
       <span class="qinput__warning" x-show="wrong" x-cloak x-transition> <span :class="{ 'shake-head': isShakeHead }">x</span> </span>]]
 
     if hintsText ~= '' then
-      local tipId = RandomStringID(8)
+      local tipId = utils.RandomStringID(8)
       html = html ..
           [[<span x-show="hints" x-transition x-cloak id="]] .. tipId ..
           [[" class="qinput__tooltip" x-clock>
@@ -252,8 +206,8 @@ return {
     return pandoc.RawBlock('html', html)
   end,
   ['qnext'] = function(args, kwargs, meta)
-    writeEnvironments()
-    local g = escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
+    utils.writeEnvironments()
+    local g = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
     local html = [[
     <div class="qnext__container">
     <button

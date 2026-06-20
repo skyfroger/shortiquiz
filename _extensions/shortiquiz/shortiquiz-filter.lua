@@ -1,55 +1,17 @@
-local function writeEnvironments()
-    if quarto.doc.is_format("html:js") then
-        quarto.doc.add_html_dependency({
-            name = "alpine",
-            version = "3.12",
-            scripts = {
-                { path = "sort-alpine.min.js", afterBody = "true" },
-                { path = "alpine.min.js",      afterBody = "true" }
-            },
-        })
-        quarto.doc.add_html_dependency({
-            name = "qstyles",
-            version = "1",
-            stylesheets = { "qstyles.css" }
-        })
-    end
-end
+local EXTENSION_NAME = "shortiquiz"
 
-local function ShuffleInPlace(t)
-    for i = #t, 2, -1 do
-        local j = math.random(i)
-        t[i], t[j] = t[j], t[i]
-    end
-end
+local utils = require("./utils")
 
--- считаем количество пробелов в начале строки
-function count_leading_spaces(str)
-    local match = str:match("^%s+")
-    if match then
-        return #match
-    else
-        return 0
-    end
-end
-
-function RandomStringID(length)
-    local res = ""
-    for i = 1, length do
-        res = res .. string.char(math.random(97, 122))
-    end
-    return res
-end
 
 function createQinput(div)
-    writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
 
     local question = {}              -- разметка всего вопроса
 
     local questionContent = {}       -- содержимое вопроса
     local hint = nil                 -- подсказка
     local stems = nil                -- варианты ответа
-    local qName = RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
+    local qName = utils.RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
 
     local gateName = ""
 
@@ -220,14 +182,14 @@ end
 -- по умолчанию - нет (не добавлять изменение переменной isCurrentAnswerCorrect = true;)
 
 function createQmutli(div)
-    writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
 
     local question = {}              -- разметка всего вопроса
 
     local questionContent = {}       -- содержимое вопроса
     local hint = nil                 -- подсказка
     local stems = nil                -- варианты ответа
-    local qName = RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
+    local qName = utils.RandomStringID(10) -- уникальное имя для радиокнопок для каждого вопроса
 
     local gateName = ""
 
@@ -256,7 +218,7 @@ function createQmutli(div)
         local fullStem = {}    -- вариант ответа со всей разметко Alpinejs
         local option = {}
         local qHint = nil
-        local qId = RandomStringID(10) -- id для label
+        local qId = utils.RandomStringID(10) -- id для label
 
         -- ищем в вопросе параграфы и блок-цитату
         for _, block in ipairs(item) do
@@ -307,7 +269,7 @@ function createQmutli(div)
         -- quarto.log.output(hint)
     end
 
-    ShuffleInPlace(questionOptions)
+    utils.ShuffleInPlace(questionOptions)
 
     -- открывающий div; есть отдельный стиль, если ответили с первой попытки
     table.insert(question,
@@ -371,7 +333,7 @@ function createQmutli(div)
 end
 
 function createQcheck(div)
-    writeEnvironments()        -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()        -- убеждаемся, что скрипты и стили добавлены в окружение
 
     local question = {}        -- разметка всего вопроса
 
@@ -402,7 +364,7 @@ function createQcheck(div)
         local fullStem = {}       -- вариант ответа со всей разметко Alpinejs
         local option = {}
         local qHint = nil
-        local qId = RandomStringID(10) -- id для label
+        local qId = utils.RandomStringID(10) -- id для label
 
         -- ищем в вопросе параграфы и блок-цитату
         for _, block in ipairs(item) do
@@ -539,7 +501,7 @@ function createQcheck(div)
     end
 
     -- TODO вставить вопросы с отзывами
-    ShuffleInPlace(questionOptions)
+    utils.ShuffleInPlace(questionOptions)
     table.insert(question, pandoc.Div(questionOptions))
 
     -- TODO число 3 заменить на сумму значений правильных ответов (арифметическая прогрессия)
@@ -564,9 +526,9 @@ function createQcheck(div)
 end
 
 function createQsolution(div)
-    writeEnvironments()                   -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()                   -- убеждаемся, что скрипты и стили добавлены в окружение
     local solution = {}                   -- итоговая разметка
-    local solutionId = RandomStringID(10) -- id для div c решением
+    local solutionId = utils.RandomStringID(10) -- id для div c решением
 
     local hintsList = nil
     local solutionCode = nil
@@ -812,7 +774,7 @@ function createQgroup(div)
 end
 
 function createQflashcards(div)
-    writeEnvironments()       -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()       -- убеждаемся, что скрипты и стили добавлены в окружение
 
     local elementContent = {} -- разметка всего вопроса
 
@@ -987,40 +949,10 @@ function createQflashcards(div)
     return pandoc.Div(elementContent, { class = "qflashcards__ready" })
 end
 
--- в мультистрочном блоке инструкций
--- удаляем начальные пробелы в каждой строке
-function trim_initial_spaces(input)
-    -- Разбиваем строку на строки по символу новой строки
-    local lines = {}
-    for line in input:gmatch("[^\r\n]+") do
-        -- Удаляем начальные пробелы
-        line = line:gsub("^%s+", "")
-        table.insert(lines, line)
-    end
-
-    -- Объединяем строки обратно в одну строку с символом новой строки
-    return table.concat(lines, "\n")
-end
-
-local function escapeHtmlDataAttribute(str)
-    local entities = {
-        ['"'] = "&quot;",
-        ["'"] = "&#39;",
-        ["<"] = "&lt;",
-        [">"] = "&gt;",
-        ["&"] = "&amp;",
-        [" "] = "&#32;",
-    }
-
-    return str:gsub('[&<>"\'\t\n\r ]', function(c)
-        return entities[c] or c
-    end)
-end
-
 function createQParson(div)
-    writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
 
-    local taskID = RandomStringID(7) -- уникальный идентификатор задания
+    local taskID = utils.RandomStringID(7) -- уникальный идентификатор задания
 
     local elementContent = {}        -- разметка всего вопроса
     local taskDescription = {}       -- разметка условия задачи
@@ -1068,19 +1000,19 @@ function createQParson(div)
     local lines = {}
     local solutionJSstr = "[" -- строка с js массивом решения задачи
     for s in (solutionCode.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
-        local spCount = count_leading_spaces(s)
+        local spCount = utils.count_leading_spaces(s)
         if spCount ~= #s then
             local ind = #lines + 1
             lines[ind] = s
 
             -- получаем разметку с подсветкой синтаксиса для строки кода
-            local code_element = pandoc.Code(trim_initial_spaces(s), { class = languageClass })
+            local code_element = pandoc.Code(utils.trim_initial_spaces(s), { class = languageClass })
             local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
-            local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
+            local hl = utils.escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
 
             solutionJSstr = solutionJSstr
                 .. string.format("{id: %d, code: String.raw`%s`, hl: String.raw`%s`, indent: %d},",
-                ind, escapeHtmlDataAttribute(trim_initial_spaces(s)), hl, spCount // spacesPerLevel)
+                ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(s)), hl, spCount // spacesPerLevel)
         end
     end
     solutionJSstr = solutionJSstr .. "]"
@@ -1088,24 +1020,24 @@ function createQParson(div)
     -- если есть дистракторы, добавляем их к блокам решения
     if distractors ~= nil then
         for s in (distractors.text .. "\n"):gmatch(separator) do --"[^\r\n]+"
-            if count_leading_spaces(s) ~= #s then
+            if utils.count_leading_spaces(s) ~= #s then
                 table.insert(lines, s)
             end
         end
     end
 
-    ShuffleInPlace(lines) -- перемешиваем варианты ответов
+    utils.ShuffleInPlace(lines) -- перемешиваем варианты ответов
 
     local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
     for ind, val in pairs(lines) do
         -- получаем разметку с подсветкой синтаксиса для строки кода
-        local code_element = pandoc.Code(trim_initial_spaces(val), { class = languageClass })
+        local code_element = pandoc.Code(utils.trim_initial_spaces(val), { class = languageClass })
         local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
-        local hl = escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
+        local hl = utils.escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
         
         sourceJSstr = sourceJSstr
             .. string.format("{id: %d, container: 'source', code: String.raw`%s`, hl: String.raw`%s`, indent: 0, error: false},",
-            ind, escapeHtmlDataAttribute(trim_initial_spaces(val)), hl)
+            ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(val)), hl)
     end
     sourceJSstr = sourceJSstr .. "]"
 
@@ -1378,7 +1310,7 @@ function createQgate(div)
 end
 
 function createQflip(div)
-    writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
+    utils.writeEnvironments()              -- убеждаемся, что скрипты и стили добавлены в окружение
 
     local question = {}              -- разметка всего вопроса
     local questionContent = {}       -- содержимое вопроса
@@ -1437,14 +1369,9 @@ function createQflip(div)
     return pandoc.Div(question, { class = "qflip__ready" })
 end
 
-function css_style(str)
-    local top, left, width, height = str:match("(%-?%d+%.?%d*) (%-?%d+%.?%d*) (%-?%d+%.?%d*) (%-?%d+%.?%d*)")
-    return string.format("style=\"top: %s%%; left: %s%%; width: %s%%; height: %s%%\"", top, left, width, height)
-end
-
 function createQspot(div)
-    writeEnvironments() -- окружение
-    local qId = RandomStringID(10) -- уникальный ID для элементов этого вопроса
+    utils.writeEnvironments() -- окружение
+    local qId = utils.RandomStringID(10) -- уникальный ID для элементов этого вопроса
     local question = {}        -- разметка всего вопроса
 
     local questionsContent = {}       -- список вопросов
@@ -1575,7 +1502,7 @@ function createQspot(div)
     <div class="qspot__container__wraper">
     
     <div data-qid="]]..qId..[[" class="qspot__container" x-on:click="hitTest($event)">
-        <div data-qid="]]..qId..[[" class="qspot__area" :class="isAnswerCorrect && 'correct'" ]]..css_style(area)..[[></div>]]))
+        <div data-qid="]]..qId..[[" class="qspot__area" :class="isAnswerCorrect && 'correct'" ]]..utils.css_style(area)..[[></div>]]))
 
     table.insert(question, mainImage)
 
