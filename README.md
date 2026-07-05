@@ -462,3 +462,13 @@ analogRead(pin);
 The following third-party libraries and modules were used in the development of the extension:
 
 - [Alpine.js](https://alpinejs.dev) for UI reactivity. MIT license.
+
+The functionality and look of the extension were inspired by the following projects:
+
+- [Naquiz extension for Quarto](https://github.com/nareal/naquiz) is the idea of using Alpine.js for interface reactivity.
+- [mathigon.org](https://mathigon.org/courses) - open and closed type line questions in the text Also took the idea with unblocking explanation steps as questions are answered.
+- [js-parsons](https://js-parsons.github.io) is the interface and tooltip system for Parsons' task.
+- [quizdown-js](https://github.com/bonartm/quizdown-js) is the idea of grouping a set of questions into one block.
+- [futurecoder.io](https://futurecoder.io) - step-by-step code line appearance when using tooltips.
+
+Thanks to the developers of these projects.
