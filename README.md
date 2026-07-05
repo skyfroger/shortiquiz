@@ -456,3 +456,9 @@ analogRead(pin);
 3. **Hints and feedback.** Use blockquotes `>` to add explanations. The placement of the quote (before the list or inside an item) determines its purpose.
 4. **Code inside questions.** Quarto supports syntax highlighting inside question blocks - use fenced code blocks (```` ``` ````).
 5. **Block nesting.** For `qgroup` and `qgate`, use 4 colons (`::::`) for the outer block to avoid conflicts with inner blocks of 3 colons (`:::`).
+
+## Credits
+
+The following third-party libraries and modules were used in the development of the extension:
+
+- [Alpine.js](https://alpinejs.dev) for UI reactivity. MIT license.
