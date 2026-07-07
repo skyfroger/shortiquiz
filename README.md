@@ -457,18 +457,18 @@ analogRead(pin);
 4. **Code inside questions.** Quarto supports syntax highlighting inside question blocks - use fenced code blocks (```` ``` ````).
 5. **Block nesting.** For `qgroup` and `qgate`, use 4 colons (`::::`) for the outer block to avoid conflicts with inner blocks of 3 colons (`:::`).
 
-## Credits
+## Acknowledgments
 
-The following third-party libraries and modules were used in the development of the extension:
+The following third-party libraries and modules were used in the development of this extension:
 
-- [Alpine.js](https://alpinejs.dev) for UI reactivity. MIT license.
+- [Alpine.js](https://alpinejs.dev) for reactive user interface. MIT License.
 
-The functionality and look of the extension were inspired by the following projects:
+The functionality and appearance of this extension were inspired by the following projects:
 
-- [Naquiz extension for Quarto](https://github.com/nareal/naquiz) is the idea of using Alpine.js for interface reactivity.
-- [mathigon.org](https://mathigon.org/courses) - open and closed type line questions in the text Also took the idea with unblocking explanation steps as questions are answered.
-- [js-parsons](https://js-parsons.github.io) is the interface and tooltip system for Parsons' task.
-- [quizdown-js](https://github.com/bonartm/quizdown-js) is the idea of grouping a set of questions into one block.
-- [futurecoder.io](https://futurecoder.io) - step-by-step code line appearance when using tooltips.
+- [The naquiz extension for Quarto](https://github.com/nareal/naquiz) — the idea of using Alpine.js for reactive UI.
+- [mathigon.org](https://mathigon.org/courses) — open-ended and closed-ended text-based questions embedded within the text. I also borrowed the idea of unlocking explanation steps as questions are answered.
+- [js-parsons](https://js-parsons.github.io) — the interface and hint system for the Parsons task.
+- [quizdown-js](https://github.com/bonartm/quizdown-js) — the idea of grouping a set of questions into a single block.
+- [futurecoder.io](https://futurecoder.io) — step-by-step display of code lines when using hints.
 
-Thanks to the developers of these projects.
+Thank you to the developers of these projects.
