@@ -297,18 +297,28 @@ sum = 1##
 
 ### Image area selection (`qspot`)
 
-The user is asked to click on a specific area of an image.
+The user is asked to drag numbered markers to the correct image areas.
 
-The **`area`** attribute specifies the area coordinates in the format `"x y width height"` (in percentages or pixels).
+**The `pos`** attribute specifies the coordinates of the area in the format `x y width height`.
+
+> **Note:** For the demo to work correctly, replace `example.assets/img.png` with the actual path to the image in your project.
 
 ```markdown
-:::{.qspot area="26 34 29 50"}
+:::{.qgroup}
 
-![](example.assets/img.png)
+:::{.qspot}
 
-Click on the center of the image.
+![](images/img.png)
 
-> Hint for the question.
+Find the following elements in the image:
+
+[photoresistor]{pos="57 24 12 12"}
+
+[red LED]{pos="43 61 13 31"}
+
+[microcontroller]{pos="1 41 58 42"}
+
+> Hint to the question.
 
 :::
 ```
@@ -462,6 +472,7 @@ analogRead(pin);
 The following third-party libraries and modules were used in the development of this extension:
 
 - [Alpine.js](https://alpinejs.dev) for reactive user interface. MIT License.
+- [PlainDraggable](https://anseki.github.io/plain-draggable/) for drag-and-drop implementation. MIT License.
 
 The functionality and appearance of this extension were inspired by the following projects:
 
