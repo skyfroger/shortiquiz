@@ -1399,7 +1399,7 @@ function createQspot(div)
 
             -- разметка для маркера
             table.insert(containerMarkup, pandoc.RawBlock("html",
-            [[<span class="marker" style="left: ]]..(markerIndex * 35)..[[px;" :class="getMarkerClass(]]..markerIndex..[[)">
+            [[<span class="marker" :class="getMarkerClass(]]..markerIndex..[[)">
             ]]..(markerIndex+1)..[[</span>]]))
 
             -- разметка для целевой области

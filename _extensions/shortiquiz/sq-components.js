@@ -10,11 +10,12 @@ function registerSQComponents() {
         init() {
             const container = this.$refs.container;
             const markers = container.querySelectorAll(".marker");
-            const containment = container.querySelector(".qspot__container");
-            markers.forEach((marker, index) => {
-                const m = new PlainDraggable(marker, {
-                    containment: containment,
-                });
+            console.log(markers);
+
+            markers.forEach((marker, i) => {
+                const m = new PlainDraggable(marker);
+                m.left += i * 40;
+                console.log(m, i);
                 m.onMoveStart = () => {
                     this.isShowFeedback = false;
                 };
