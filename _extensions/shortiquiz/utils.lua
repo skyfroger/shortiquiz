@@ -6,13 +6,9 @@ function M.writeEnvironments()
             name = "sq-components",
             version = "1.0.0",
             scripts = {
-                { path = "sq-components.js" } },
-        })
-        quarto.doc.add_html_dependency({
-            name = "plain-draggable",
-            version = "2.5.15",
-            scripts = {
-                { path = "plain-draggable.min.js", afterBody = "true" } },
+                { path = "plain-draggable.min.js" },
+                { path = "sq-components.js" },
+            }
         })
         quarto.doc.add_html_dependency({
             name = "alpine",

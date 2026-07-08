@@ -1398,8 +1398,8 @@ function createQspot(div)
         ]]))
 
             -- разметка для маркера
-            table.insert(markersMarkup, pandoc.RawBlock("html",
-            [[<span class="marker" :class="getMarkerClass(]]..markerIndex..[[)">
+            table.insert(containerMarkup, pandoc.RawBlock("html",
+            [[<span class="marker" style="left: ]]..(markerIndex * 35)..[[px;" :class="getMarkerClass(]]..markerIndex..[[)">
             ]]..(markerIndex+1)..[[</span>]]))
 
             -- разметка для целевой области
@@ -1462,7 +1462,7 @@ function createQspot(div)
     <p class="qspot__instruction">]]..l10n("qSpotInstruction")..[[</p>
 ]]))
 
-    table.insert(question, pandoc.Div(markersMarkup, {class="qspot__markers"}))
+    -- table.insert(question, pandoc.Div(markersMarkup, {class="qspot__markers"}))
     table.insert(containerMarkup, mainImage)
 
     table.insert(question, pandoc.Div(containerMarkup, {class="qspot__container"}))
