@@ -966,20 +966,6 @@
 
 /* qSpot */
 
-.qspot__container__wraper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.qspot__container {
-    position: relative;
-    display: inline-block; /* ключевое свойство */
-    padding: 0;
-    margin: 0.2em 0;
-    overflow: visible; /* чтобы тень не обрезалась */
-}
-
 .qspot__instruction {
     text-align: center;
     margin: 0;
@@ -988,68 +974,85 @@
     color: gray;
 }
 
-.qspot__pin {
-    position: absolute;
-    transform: translate(-3px, -42px);
-    top: 5%;
-    left: 90%;
-    transition: all 0.3s ease;
+.qspot__container {
+    position: relative;
+    width: fit-content;
+    height: fit-content;
 }
 
-@keyframes pin-shake {
-    0% {
-        transform: translate(-3px, -42px) translateX(0) rotate(0deg);
-    }
-    10% {
-        transform: translate(-3px, -42px) translateX(-6px) rotate(-3deg);
-    }
-    20% {
-        transform: translate(-3px, -42px) translateX(6px) rotate(3deg);
-    }
-    30% {
-        transform: translate(-3px, -42px) translateX(-6px) rotate(-3deg);
-    }
-    40% {
-        transform: translate(-3px, -42px) translateX(6px) rotate(3deg);
-    }
-    50% {
-        transform: translate(-3px, -42px) translateX(-4px) rotate(-2deg);
-    }
-    60% {
-        transform: translate(-3px, -42px) translateX(4px) rotate(2deg);
-    }
-    70% {
-        transform: translate(-3px, -42px) translateX(-2px) rotate(-1deg);
-    }
-    80% {
-        transform: translate(-3px, -42px) translateX(2px) rotate(1deg);
-    }
-    90% {
-        transform: translate(-3px, -42px) translateX(-1px) rotate(-0.5deg);
-    }
-    100% {
-        transform: translate(-3px, -42px) translateX(0) rotate(0deg);
-    }
+.qspot__container img {
+    z-index: 1;
 }
 
-.qspot__pin.wrong {
-    animation: pin-shake 0.5s ease-in-out;
+.qspot__markers {
+    display: flex;
+    height: 0;
 }
 
-.qspot__pin img {
-    height: 52px;
-    width: 52px;
+.marker {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    border-radius: 0.7em;
+    border: 3px solid var(--bg-color);
+    box-shadow: var(--input-shadow);
+    width: 32px;
+    height: 32px;
+    margin: 0.2em;
+    text-align: center;
+    z-index: 200;
+    opacity: 1;
+    transition:
+        background-color 0.3s ease-in-out,
+        opacity 0.3s ease-in-out;
+}
+
+.marker.wrong {
+    background-color: var(--wrong-color);
+}
+
+.marker.correct {
+    background-color: var(--success-color);
 }
 
 .qspot__area {
     position: absolute;
+    z-index: 50;
     opacity: 0;
-    border: 0.3em solid var(--success-color);
+    border: 3px solid var(--success-color);
     background-color: #0a8f6e30;
+    color: white;
+    font-weight: bold;
+    font-size: 1.3rem;
+    padding: 0.2em;
     border-radius: 0.6em;
     transition: opacity 0.4s ease-out;
 }
 
 .qspot__area.correct {
     opacity: 1;
+}
+
+.qspot__questions_container {
+    display: flex;
+    /* flex-direction: column; */
+    gap: 0.3em;
+}
+
+.qspot_question {
+    display: inline-block;
+    border: 2px solid var(--success-color);
+    padding: 0 0.2em 0 0;
+    border-radius: 0.4em;
+}
+
+.question__number {
+    display: inline-block;
+    background: var(--success-color);
+    padding: 0 0.4em;
+    color: var(--bg-color);
+    font-weight: bold;
 }

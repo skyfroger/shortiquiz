@@ -1,0 +1,71 @@
+function registerSQComponents() {
+    Alpine.data("qspot", () => ({
+        markersList: [],
+        targetsList: [],
+        answerStatusList: [],
+        attempt: 0,
+        isShowFeedback: false,
+        isAnswerCorrect: false,
+        isHintVisible: false,
+        init() {
+            const container = this.$refs.container;
+            const markers = container.querySelectorAll(".marker");
+            const containment = container.querySelector(".qspot__container");
+            markers.forEach((marker, index) => {
+                const m = new PlainDraggable(marker, {
+                    containment: containment,
+                });
+                m.onMoveStart = () => {
+                    this.isShowFeedback = false;
+                };
+                this.markersList.push(m);
+            });
+
+            this.targetsList = Array.from(
+                container.querySelectorAll(".qspot__area"),
+            );
+
+            this.answerStatusList = Array(markers.length).fill(false);
+        },
+        isCollide(target, marker) {
+            const t = target.getBoundingClientRect();
+            const m = marker.element.getBoundingClientRect();
+            return !(
+                t.top > m.bottom ||
+                t.right < m.left ||
+                t.bottom < m.top ||
+                t.left > m.right
+            );
+        },
+        getMarkerClass(index) {
+            if (!this.isShowFeedback) return "";
+            return this.answerStatusList[index] ? "correct" : "wrong";
+        },
+        checkAnswer() {
+            this.attempt++;
+            this.isShowFeedback = true;
+
+            for (let index = 0; index < this.targetsList.length; index++) {
+                const target = this.targetsList[index];
+                const marker = this.markersList[index];
+                const collision = this.isCollide(target, marker);
+                this.answerStatusList[index] = collision;
+                if (collision) {
+                    marker.disabled = true;
+                    marker.element.style.opacity = 0;
+                    target.classList.add("correct");
+                }
+            }
+
+            this.isAnswerCorrect = !this.answerStatusList.includes(false);
+        },
+    }));
+}
+
+if (window.Alpine) {
+    registerSQComponents();
+} else {
+    document.addEventListener("alpine:init", () => {
+        registerSQComponents();
+    });
+}

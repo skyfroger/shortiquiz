@@ -3,6 +3,18 @@ local M = {}
 function M.writeEnvironments()
     if quarto.doc.is_format("html:js") then
         quarto.doc.add_html_dependency({
+            name = "sq-components",
+            version = "1.0.0",
+            scripts = {
+                { path = "sq-components.js" } },
+        })
+        quarto.doc.add_html_dependency({
+            name = "plain-draggable",
+            version = "2.5.15",
+            scripts = {
+                { path = "plain-draggable.min.js", afterBody = "true" } },
+        })
+        quarto.doc.add_html_dependency({
             name = "alpine",
             version = "3.12",
             scripts = {
