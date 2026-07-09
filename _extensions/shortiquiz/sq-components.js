@@ -10,12 +10,10 @@ function registerSQComponents() {
         init() {
             const container = this.$refs.container;
             const markers = container.querySelectorAll(".marker");
-            console.log(markers);
-
+            const markersCount = markers.length;
             markers.forEach((marker, i) => {
-                const m = new PlainDraggable(marker);
-                m.left += i * 40;
-                console.log(m, i);
+                const m = new PlainDraggable(marker, { leftTop: true });
+                m.element.style.zIndex = markersCount * 100 - i;
                 m.onMoveStart = () => {
                     this.isShowFeedback = false;
                 };
