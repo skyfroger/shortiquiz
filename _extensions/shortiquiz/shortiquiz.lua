@@ -1,6 +1,7 @@
 local EXTENSION_NAME = "shortiquiz"
 
 local utils = require("./utils")
+local l10n  = require("./localize")
 
 
 return {
@@ -206,8 +207,17 @@ return {
     return pandoc.RawBlock('html', html)
   end,
   ['qnext'] = function(args, kwargs, meta)
+    local lang = pandoc.utils.stringify(quarto.metadata.get("lang"))
+    l10n.load(lang)
+
     utils.writeEnvironments()
+    
+    local text = l10n("next")
+    if args[1] ~= nil then
+      text = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(args[1]))
+    end
     local g = utils.escapeHtmlDataAttribute(pandoc.utils.stringify(kwargs["gate"]))
+
     local html = [[
     <div class="qnext__container">
     <button
@@ -228,9 +238,10 @@ return {
       });
       "
     >
-    Далее
+    ]]..text..[[
     </button>
     </div>]]
     return pandoc.RawBlock('html', html)
   end
 }
+

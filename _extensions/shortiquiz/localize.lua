@@ -12,7 +12,8 @@ local loc_data = {
     solution = "Solution",
     nextStep = "Next Step",
     showFullSolution = "Show Full Solution",
-    qSpotInstruction = "Drag the numbered markers onto the image"
+    qSpotInstruction = "Drag the numbered markers onto the image",
+    next = "Next"
   },
   ru = {
     inputPlaceholder = "Введите ответ",
@@ -25,7 +26,8 @@ local loc_data = {
     solution = "Получить решение",
     nextStep = "Следующий шаг",
     showFullSolution = "Показать всё решение",
-    qSpotInstruction = "Перетащите на изображение пронумерованные маркеры"
+    qSpotInstruction = "Перетащите на изображение пронумерованные маркеры",
+    next = "Далее"
   }
 }
 -- // END OF LOCALIZATION STRINGS //
