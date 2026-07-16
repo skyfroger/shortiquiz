@@ -27,34 +27,8 @@ return {
     end
     -- quarto.log.output(correctAnswer)
     local html = [[
-    <span x-data="{
-      answer: '???',
-      isCorrect: false,
-      attempt: 0,
-      correctAnswer: `]] .. correctAnswer .. [[`,
-      get answerVisibility() { return this.isCorrect },
-      get questionVisibility() { return !this.isCorrect },
-      get wrong() { return this.answer !== '???' && this.answer !== this.correctAnswer },
-      isShakeHead: false,
-      shake(){
-          this.isShakeHead = true;
-          setTimeout(() => {
-            this.isShakeHead = false;
-          }, 600);
-      }
-    }"
-    data-gate=']] .. g .. [['
-    x-init="$watch('answer', value => {
-      isCorrect = answer === correctAnswer ? true : false;
-      attempt++;
-      if (!isCorrect) shake();
-      $dispatch('answer-notification', {
-        isCorrect: isCorrect,
-        type: 'qselect',
-        gate: ']] .. g .. [[',
-        attempt: attempt
-      })
-    })">
+    <span x-data="qselect(']]..correctAnswer..[[', ']]..g..[[')"
+    data-gate=']] .. g .. [['>
     <span class="qinput__container" x-show="questionVisibility" x-transition>
       <select class="qselect__select"  x-model="answer">
         <option disabled>???</option>]]

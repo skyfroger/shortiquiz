@@ -59,6 +59,43 @@ function registerSQComponents() {
             this.isAnswerCorrect = !this.answerStatusList.includes(false);
         },
     }));
+
+    Alpine.data("qselect", (correctAnswer, gate = "") => ({
+        answer: "???",
+        isCorrect: false,
+        attempt: 0,
+        correctAnswer: correctAnswer,
+        get answerVisibility() {
+            return this.isCorrect;
+        },
+        get questionVisibility() {
+            return !this.isCorrect;
+        },
+        get wrong() {
+            return this.answer !== "???" && this.answer !== this.correctAnswer;
+        },
+        isShakeHead: false,
+        init() {
+            this.$watch("answer", (value) => {
+                this.isCorrect =
+                    this.answer === this.correctAnswer ? true : false;
+                this.attempt++;
+                if (!this.isCorrect) this.shake();
+                this.$dispatch("answer-notification", {
+                    isCorrect: this.isCorrect,
+                    type: "qselect",
+                    gate: gate,
+                    attempt: this.attempt,
+                });
+            });
+        },
+        shake() {
+            this.isShakeHead = true;
+            setTimeout(() => {
+                this.isShakeHead = false;
+            }, 600);
+        },
+    }));
 }
 
 if (window.Alpine) {
