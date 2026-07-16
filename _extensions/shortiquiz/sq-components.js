@@ -154,6 +154,30 @@ function registerSQComponents() {
             }
         },
     }));
+
+    Alpine.data("qnext", (gate = "") => ({
+        isVisible: true,
+        options: {
+            ["x-show"]() {
+                return this.isVisible;
+            },
+            ["x-cloak"]() {
+                return true;
+            },
+            ["x-transition"]() {
+                return true;
+            },
+            ["@click"]() {
+                this.isVisible = !this.isVisible;
+                this.$dispatch("answer-notification", {
+                    isCorrect: true,
+                    type: "qnext",
+                    gate: gate,
+                    attempt: 1,
+                });
+            },
+        },
+    }));
 }
 
 if (window.Alpine) {

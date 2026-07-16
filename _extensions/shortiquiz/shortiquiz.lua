@@ -150,22 +150,9 @@ return {
     local html = [[
     <div class="qnext__container">
     <button
-      x-data="{
-        isVisible: true
-      }"
-      x-show="isVisible"
-      x-cloak
-      x-transition
+      x-data="qnext(']]..g..[[')"
+      x-bind="options"
       data-gate=']] .. g .. [['
-      x-on:click="
-      isVisible = !isVisible;
-      $dispatch('answer-notification', {
-        isCorrect: true,
-        type: 'qnext',
-        gate: ']] .. g .. [[',
-        attempt: 1
-      });
-      "
     >
     ]]..text..[[
     </button>
