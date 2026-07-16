@@ -96,6 +96,64 @@ function registerSQComponents() {
             }, 600);
         },
     }));
+
+    Alpine.data("qinput", (correctAnswer, tol = 0, gate = "") => ({
+        answer: "",
+        isCorrect: false,
+        correctAnswer: correctAnswer.split("|"),
+        attempt: 0,
+        tol: tol,
+        get answerVisibility() {
+            return this.isCorrect;
+        },
+        get questionVisibility() {
+            return !this.isCorrect;
+        },
+        get wrong() {
+            return this.answer !== "" && !this.setIsCorrect(this.answer);
+        },
+        get hints() {
+            return this.wrong && this.attempt >= 3;
+        },
+        isShakeHead: false,
+        init() {
+            this.$watch("answer", (value) => {
+                this.isCorrect = this.setIsCorrect(this.answer);
+                if (!this.isCorrect) this.shake();
+                this.$dispatch("answer-notification", {
+                    isCorrect: this.isCorrect,
+                    type: "qinput",
+                    gate: gate,
+                    attempt: this.attempt,
+                });
+            });
+        },
+        shake() {
+            this.isShakeHead = true;
+            setTimeout(() => {
+                this.isShakeHead = false;
+            }, 600);
+        },
+        setIsCorrect(val) {
+            if (this.tol !== null) {
+                val = val.replace(",", ".");
+                const a = Number(this.correctAnswer[0]);
+                if (
+                    Number(val) <= a + this.tol &&
+                    Number(val) >= a - this.tol
+                ) {
+                    // ответ попадает в диапазон
+                    this.correctAnswer[0] = val; // введённый ответ выведем как правильный
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                // если не задана точность
+                return this.correctAnswer.includes(val);
+            }
+        },
+    }));
 }
 
 if (window.Alpine) {

@@ -75,59 +75,14 @@ return {
 
     local tolHtml = nil
     if tol ~= nil and tol ~= "" then
-      tolHtml = "tol:" .. tol .. ","
+      tolHtml = tol
     else
-      tolHtml = "tol: null,"
+      tolHtml = "null"
     end
 
     local html = [[
-    <span x-data="{
-      answer: '',
-      isCorrect: false,
-      ]] .. tolHtml ..
-        [[
-      correctAnswer: `]] .. correctAnswer .. [[`.split('|'),
-      attempt: 0,
-      get answerVisibility() { return this.isCorrect },
-      get questionVisibility() { return !this.isCorrect },
-      get wrong() { return this.answer !== '' && !this.setIsCorrect(this.answer) },
-      get hints() { return this.wrong && this.attempt >= 3 },
-      isShakeHead: false,
-      shake(){
-          this.isShakeHead = true;
-          setTimeout(() => {
-            this.isShakeHead = false;
-          }, 600);
-      },
-      setIsCorrect(val){
-        if (this.tol !== null){
-          val = val.replace(',', '.');
-          const a = Number(this.correctAnswer[0]);
-          if (Number(val) <= a + this.tol && Number(val) >= a - this.tol){
-            // ответ попадает в диапазон
-            this.correctAnswer[0] = val; // введённый ответ выведем как правильный
-            return true;
-          }else{
-            return false;
-          }
-        } else {
-          // если не задана точность
-          return this.correctAnswer.includes(val);
-        }
-      }
-    }"
-    data-gate=']] .. g .. [['
-    x-init="$watch('answer', value => {
-      isCorrect = setIsCorrect(answer);
-      if (!isCorrect) shake();
-      $dispatch('answer-notification', {
-        isCorrect: isCorrect,
-        type: 'qinput',
-        gate: ']] .. g .. [[',
-        attempt: attempt
-      })
-    })"
-    >
+    <span x-data="qinput(']]..correctAnswer..[[', ]]..tolHtml..[[ , ']]..g..[[')"
+    data-gate=']] .. g .. [['>
     <span class="qinput__container" x-show="questionVisibility" x-transition>
       <input type="text" size="]] .. size .. [["   x-model.lazy="answer" placeholder="???" x-on:change="attempt++"/>
       <span class="qinput__warning" x-show="wrong" x-cloak x-transition> <span :class="{ 'shake-head': isShakeHead }">x</span> </span>]]
