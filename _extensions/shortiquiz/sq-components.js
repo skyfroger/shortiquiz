@@ -178,6 +178,95 @@ function registerSQComponents() {
             },
         },
     }));
+
+    Alpine.data("qparson", (loc, source, solution, spacesPerLevel = 4) => ({
+        isAnswered: false,
+        isShowFeedback: false,
+        attempt: 0,
+        maxHeight: 0,
+        errorMessage: "",
+        source: source,
+        dest: [],
+        solution: solution,
+        maxIndent: 3, // максимальное количество отступов
+        indentCh: spacesPerLevel, // можно брать из атрибута фильтра
+
+        onSortEnd(item, pos, toArray) {
+            if (this.isShowFeedback) this.isShowFeedback = false;
+
+            const fromArray =
+                item.container === "source" ? this.source : this.dest;
+
+            const fromIndex = fromArray.findIndex((i) => i.id === item.id);
+            fromArray.splice(fromIndex, 1);
+            toArray.splice(pos, 0, item);
+
+            item.container = toArray === this.source ? "source" : "dest";
+
+            // сбрасываем отступ, если строка возвращается в 'источник'
+            if (toArray === this.source) {
+                item.indent = 0;
+                item.error = false;
+            }
+        },
+        incIndent(line) {
+            if (this.isAnswered) return; // ответ правильный - отступы не меняем
+            line.indent = Math.min(this.maxIndent, line.indent + 1);
+            this.isShowFeedback = false;
+        },
+        decIndent(line) {
+            if (this.isAnswered) return; // ответ правильный - отступы не меняем
+            line.indent = Math.max(0, line.indent - 1);
+            this.isShowFeedback = false;
+        },
+        codeWrapperStyle(line) {
+            const colors = ["#fff0", "#60B99A", "#D3CE3D", "#F77825"];
+            return `margin-left: ${this.indMarginString(line)}; border-left: 3px solid ${colors[line.indent]};`;
+        },
+        indMarginString(line) {
+            // значение отступа для margin-left у строки кода
+            return `${line.indent * this.indentCh}ch`;
+        },
+        indentColorGenerator(indent) {
+            const colors = ["#fff0", "#60B99A", "#D3CE3D", "#F77825"];
+            return colors[indent];
+        },
+        isErrorLabelVisible(line) {
+            return this.isShowFeedback && line.error;
+        },
+        feedback() {
+            this.attempt++;
+            this.isShowFeedback = true; // показать фидбек по вопросу
+
+            const isSolutionLengthIncorrect =
+                this.solution.length !== this.dest.length;
+            if (isSolutionLengthIncorrect) {
+                this.errorMessage = loc["incorrectNumberOfBlocks"];
+                return;
+            }
+
+            let isOrderOrIndentationIncorrect = false;
+            this.dest.forEach((line, index) => {
+                line.error = false;
+                if (
+                    line.code !== this.solution[index].code ||
+                    line.indent !== this.solution[index].indent
+                ) {
+                    isOrderOrIndentationIncorrect = true;
+                    line.error = true;
+                }
+            });
+
+            if (isOrderOrIndentationIncorrect) {
+                this.errorMessage = loc["incorrectOrderOfBlocks"];
+                return;
+            }
+
+            this.isShowFeedback = false; // показать фидбек по вопросу
+            this.errorMessage = "";
+            this.isAnswered = true;
+        },
+    }));
 }
 
 if (window.Alpine) {

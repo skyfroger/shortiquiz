@@ -997,14 +997,9 @@ function createQParson(div)
             local ind = #lines + 1
             lines[ind] = s
 
-            -- получаем разметку с подсветкой синтаксиса для строки кода
-            local code_element = pandoc.Code(utils.trim_initial_spaces(s), { class = languageClass })
-            local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
-            local hl = utils.escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
-
             solutionJSstr = solutionJSstr
-                .. string.format("{id: %d, code: String.raw`%s`, hl: String.raw`%s`, indent: %d},",
-                ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(s)), hl, spCount // spacesPerLevel)
+                .. string.format("{id: %d, code: String.raw`%s`, indent: %d},",
+                ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(s)), spCount // spacesPerLevel)
         end
     end
     solutionJSstr = solutionJSstr .. "]"
@@ -1021,106 +1016,23 @@ function createQParson(div)
     utils.ShuffleInPlace(lines) -- перемешиваем варианты ответов
 
     local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
-    for ind, val in pairs(lines) do
-        -- получаем разметку с подсветкой синтаксиса для строки кода
-        local code_element = pandoc.Code(utils.trim_initial_spaces(val), { class = languageClass })
-        local doc = pandoc.Pandoc({ pandoc.Plain({ code_element }) })
-        local hl = utils.escapeHtmlDataAttribute(pandoc.write(doc, 'html'))
-        
+    for ind, val in pairs(lines) do        
         sourceJSstr = sourceJSstr
-            .. string.format("{id: %d, container: 'source', code: String.raw`%s`, hl: String.raw`%s`, indent: 0, error: false},",
-            ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(val)), hl)
+            .. string.format("{id: %d, container: 'source', code: String.raw`%s`, indent: 0, error: false},",
+            ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(val)))
     end
     sourceJSstr = sourceJSstr .. "]"
+
+    local l10nTable = {
+        incorrectNumberOfBlocks = l10n("incorrectNumberOfBlocks"),
+        incorrectOrderOfBlocks = l10n("incorrectOrderOfBlocks")
+    }
+    local l10nJSstr = string.gsub(quarto.json.encode(l10nTable), '"', "'")
 
     -- начало разметки компонента
     table.insert(elementContent, pandoc.RawBlock("html", [[
     <div
-      x-data="{
-        isAnswered: false,
-        isShowFeedback: false,
-        attempt: 0,
-        maxHeight: 0,
-        errorMessage: '', 
-        source: ]]..sourceJSstr..[[,
-        dest: [],
-        solution: ]]..solutionJSstr..[[,
-        maxIndent: 3, // максимальное количество отступов
-        indentCh: ]]..spacesPerLevel..[[, // можно брать из атрибута фильтра
-
-        onSortEnd(item, pos, toArray) {
-            if(this.isShowFeedback) this.isShowFeedback = false;
-            
-            const fromArray = item.container === 'source' ? this.source : this.dest;
-            
-
-            const fromIndex = fromArray.findIndex(i => i.id === item.id);
-            fromArray.splice(fromIndex, 1);
-            toArray.splice(pos, 0, item);
-
-            item.container = toArray === this.source ? 'source' : 'dest';
-
-            // сбрасываем отступ, если строка возвращается в 'источник'
-            if (toArray === this.source) {
-                item.indent = 0;
-                item.error = false;
-            }
-        },
-        incIndent(line){
-          if (this.isAnswered) return; // ответ правильный - отступы не меняем
-          line.indent = Math.min(this.maxIndent, line.indent + 1);
-          this.isShowFeedback = false;
-        },
-        decIndent(line){
-          if (this.isAnswered) return; // ответ правильный - отступы не меняем
-          line.indent = Math.max(0, line.indent - 1);
-          this.isShowFeedback = false;
-        },
-        codeWrapperStyle(line){
-            const colors = ['#fff0', '#60B99A', '#D3CE3D', '#F77825'];
-            return `margin-left: ${this.indMarginString(line)}; border-left: 3px solid ${colors[line.indent]};`;
-        },
-        indMarginString(line){
-          // значение отступа для margin-left у строки кода
-          return `${line.indent * this.indentCh}ch`;
-        },
-        indentColorGenerator(indent){
-          const colors = ['#fff0', '#60B99A', '#D3CE3D', '#F77825'];
-          return colors[indent];
-        },
-        isErrorLabelVisible(line){
-          return this.isShowFeedback && line.error;
-        },
-        feedback(){
-          this.attempt++;
-          this.isShowFeedback = true; // показать фидбек по вопросу
-
-          const isSolutionLengthIncorrect = this.solution.length !== this.dest.length;
-          if(isSolutionLengthIncorrect){
-            this.errorMessage = ']]..l10n("incorrectNumberOfBlocks")..[[';
-            return;
-          }
-
-          let isOrderOrIndentationIncorrect = false;
-          this.dest.forEach((line, index) => {
-            line.error = false;
-            if (line.code !== this.solution[index].code || 
-                line.indent !== this.solution[index].indent){
-              isOrderOrIndentationIncorrect = true;
-              line.error = true;
-            }
-          })
-
-          if(isOrderOrIndentationIncorrect){
-            this.errorMessage = ']]..l10n("incorrectOrderOfBlocks")..[[';
-            return;
-          }
-
-          this.isShowFeedback = false; // показать фидбек по вопросу
-          this.errorMessage = '';
-          this.isAnswered = true;
-        }
-      }"
+      x-data="qparson(]]..l10nJSstr..[[,]]..sourceJSstr..[[,]]..solutionJSstr..[[,]]..spacesPerLevel..[[)"
       data-gate=']] .. gateName .. [['
       x-init="const targetNode = $el;
         // если меняется высота всего компонента, пересчитываем высоту блока
@@ -1185,7 +1097,7 @@ function createQParson(div)
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
-                <code x-html="line.hl"></code>
+                <code x-html="line.code"></code>
               </div>
             </div>
           </template>
@@ -1215,7 +1127,7 @@ function createQParson(div)
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
-                <code x-html="line.hl"></code>
+                <code x-html="line.code"></code>
               </div>
             </div>
           </template>
