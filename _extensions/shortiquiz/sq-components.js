@@ -289,7 +289,10 @@ function registerSQComponents() {
 
             this.dest.forEach((line, index) => {
                 line.error = false;
-                if (!lisCorrectIndexes.has(line.id)) {
+                if (
+                    !lisCorrectIndexes.has(line.id) ||
+                    line.id > this.solution.length
+                ) {
                     isOrderIncorrect = true;
                     line.error = true;
                 }
