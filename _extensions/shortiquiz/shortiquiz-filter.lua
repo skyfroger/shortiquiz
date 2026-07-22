@@ -1013,20 +1013,24 @@ function createQParson(div)
         end
     end
 
-    utils.ShuffleInPlace(lines) -- перемешиваем варианты ответов
+    --utils.ShuffleInPlace(lines) -- перемешиваем варианты ответов
 
     local sourceJSstr = "[" -- строка с js массивом вариантов, в том числе с дистракторами
-    for ind, val in pairs(lines) do        
+    for ind, val in pairs(lines) do
+        local spCount = utils.count_leading_spaces(val)
         sourceJSstr = sourceJSstr
-            .. string.format("{id: %d, container: 'source', code: String.raw`%s`, indent: 0, error: false},",
-            ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(val)))
+            .. string.format("{id: %d, container: 'source', code: String.raw`%s`, indent: 0, correctIndent: %d, error: false},",
+            ind, utils.escapeHtmlDataAttribute(utils.trim_initial_spaces(val)), spCount // spacesPerLevel)
     end
     sourceJSstr = sourceJSstr .. "]"
 
+    -- таблица с локализованными строками
     local l10nTable = {
         incorrectNumberOfBlocks = l10n("incorrectNumberOfBlocks"),
-        incorrectOrderOfBlocks = l10n("incorrectOrderOfBlocks")
+        incorrectOrderOfBlocks = l10n("incorrectOrderOfBlocks"),
+        incorrectIndentationOfBlocks = l10n("incorrectIndentationOfBlocks")
     }
+    -- меняем в json двойные кавычки на одинарные
     local l10nJSstr = string.gsub(quarto.json.encode(l10nTable), '"', "'")
 
     -- начало разметки компонента
@@ -1034,7 +1038,8 @@ function createQParson(div)
     <div
       x-data="qparson(]]..l10nJSstr..[[,]]..sourceJSstr..[[,]]..solutionJSstr..[[,]]..spacesPerLevel..[[)"
       data-gate=']] .. gateName .. [['
-      x-init="const targetNode = $el;
+      x-init="shuffle(source) // перемешиваем блоки кода
+        const targetNode = $el;
         // если меняется высота всего компонента, пересчитываем высоту блока
         // который хранит строки кода
         // это нужно, если элемент используется в qgroup или qgate
@@ -1097,7 +1102,7 @@ function createQParson(div)
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
-                <code x-html="line.code"></code>
+                <code class="language-]]..languageClass..[[" x-text="line.code"></code>
               </div>
             </div>
           </template>
@@ -1127,7 +1132,7 @@ function createQParson(div)
               <div 
                 class="code__wrapper"
                 :style="codeWrapperStyle(line)">
-                <code x-html="line.code"></code>
+                <code class="language-]]..languageClass..[[" x-text="line.code"></code>
               </div>
             </div>
           </template>

@@ -3,6 +3,14 @@ local M = {}
 function M.writeEnvironments()
     if quarto.doc.is_format("html:js") then
         quarto.doc.add_html_dependency({
+            name = "prism",
+            version = "1",
+            scripts = {
+                { path = "prism.js", afterBody = "true" }
+            }
+        })
+        
+        quarto.doc.add_html_dependency({
             name = "sq-components",
             version = "1.0.0",
             scripts = {
@@ -21,8 +29,9 @@ function M.writeEnvironments()
         quarto.doc.add_html_dependency({
             name = "qstyles",
             version = "1",
-            stylesheets = { "qstyles.css" }
+            stylesheets = { "qstyles.css", "prism-theme-github-light.css" }
         })
+
     end
 end
 

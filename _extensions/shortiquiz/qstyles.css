@@ -335,6 +335,10 @@
     background: none;
 }
 
+:not(pre) > code[class*="language-"] {
+    background: none !important;
+}
+
 .qmulti__stem {
     display: flex;
     align-items: stretch;

@@ -208,6 +208,10 @@ function registerSQComponents() {
                 item.indent = 0;
                 item.error = false;
             }
+
+            this.$nextTick(() => {
+                Prism.highlightAll();
+            });
         },
         incIndent(line) {
             if (this.isAnswered) return; // ответ правильный - отступы не меняем
@@ -234,6 +238,41 @@ function registerSQComponents() {
         isErrorLabelVisible(line) {
             return this.isShowFeedback && line.error;
         },
+        findLIS(sequence) {
+            const n = sequence.length;
+            if (n === 0) return new Set();
+
+            const dp = new Array(n).fill(1);
+            const prev = new Array(n).fill(-1);
+
+            let maxLen = 0;
+            let maxIdx = -1;
+
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < i; j++) {
+                    if (sequence[j].id < sequence[i].id && dp[j] + 1 > dp[i]) {
+                        dp[i] = dp[j] + 1;
+                        prev[i] = j;
+                    }
+                }
+                if (dp[i] > maxLen) {
+                    maxLen = dp[i];
+                    maxIdx = i;
+                }
+            }
+
+            const result = new Set();
+            let idx = maxIdx;
+            while (idx !== -1) {
+                result.add(sequence[idx].id);
+                idx = prev[idx];
+            }
+
+            return result;
+        },
+        shuffle(array) {
+            array.sort(() => Math.random() - 0.5);
+        },
         feedback() {
             this.attempt++;
             this.isShowFeedback = true; // показать фидбек по вопросу
@@ -245,20 +284,33 @@ function registerSQComponents() {
                 return;
             }
 
-            let isOrderOrIndentationIncorrect = false;
+            let isOrderIncorrect = false;
+            const lisCorrectIndexes = this.findLIS(this.dest);
+
             this.dest.forEach((line, index) => {
                 line.error = false;
-                if (
-                    line.code !== this.solution[index].code ||
-                    line.indent !== this.solution[index].indent
-                ) {
-                    isOrderOrIndentationIncorrect = true;
+                if (!lisCorrectIndexes.has(line.id)) {
+                    isOrderIncorrect = true;
                     line.error = true;
                 }
             });
 
-            if (isOrderOrIndentationIncorrect) {
+            if (isOrderIncorrect) {
                 this.errorMessage = loc["incorrectOrderOfBlocks"];
+                return;
+            }
+
+            let isIndentationIncorrect = false;
+            this.dest.forEach((line, index) => {
+                line.error = false;
+                if (line.indent !== line.correctIndent) {
+                    isIndentationIncorrect = true;
+                    line.error = true;
+                }
+            });
+
+            if (isIndentationIncorrect) {
+                this.errorMessage = loc["incorrectIndentationOfBlocks"];
                 return;
             }
 
